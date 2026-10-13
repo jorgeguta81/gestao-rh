@@ -1,6 +1,8 @@
 package rh.modelo;
 
 public class Departamento implements Identificavel {
+    private static final long serialVersionUID = 1L;
+
     private int id;
     private String nome;
     private String descricao;

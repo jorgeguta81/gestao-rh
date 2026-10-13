@@ -3,6 +3,8 @@ package rh.modelo;
 import java.time.LocalDate;
 
 public class FuncionarioEfetivo extends Funcionario {
+    private static final long serialVersionUID = 1L;
+
     private double salarioBase;
     private double subsidios;
 

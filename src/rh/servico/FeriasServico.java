@@ -36,6 +36,7 @@ public class FeriasServico {
         if (fe.getEstado() != EstadoFerias.PENDENTE)
             throw new IllegalArgumentException("Pedido já foi decidido.");
         fe.setEstado(aprovar ? EstadoFerias.APROVADA : EstadoFerias.REJEITADA);
+        repo.atualizar(fe); // grava a alteração
     }
 
     public int diasUsados(int funcionarioId, int ano) {

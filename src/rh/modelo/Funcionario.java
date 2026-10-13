@@ -4,6 +4,8 @@ import java.time.LocalDate;
 
 /** Funcionário: herda de Pessoa e implementa Pagavel. */
 public abstract class Funcionario extends Pessoa implements Pagavel {
+    private static final long serialVersionUID = 1L;
+
     private String cargo;
     private int departamentoId;
     private LocalDate dataAdmissao;

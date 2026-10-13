@@ -4,6 +4,8 @@ import java.time.LocalDate;
 
 /** Herança em 2 níveis: Gestor -> FuncionarioEfetivo -> Funcionario -> Pessoa. */
 public class Gestor extends FuncionarioEfetivo {
+    private static final long serialVersionUID = 1L;
+
     private double bonus;
 
     public Gestor(String nome, String bi, String email, String telefone,

@@ -29,5 +29,6 @@ public class FuncionarioServico {
         Funcionario f = repo.buscarPorId(id)
                 .orElseThrow(() -> new IllegalArgumentException("Funcionário não encontrado."));
         f.setAtivo(false);
+        repo.atualizar(f); // grava a alteração
     }
 }

@@ -3,6 +3,8 @@ package rh.modelo;
 import java.time.LocalDate;
 
 public class Estagiario extends Funcionario {
+    private static final long serialVersionUID = 1L;
+
     private double bolsa;
 
     public Estagiario(String nome, String bi, String email, String telefone,

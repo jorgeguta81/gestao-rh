@@ -4,6 +4,8 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 
 public class Ferias implements Identificavel {
+    private static final long serialVersionUID = 1L;
+
     private int id;
     private int funcionarioId;
     private LocalDate inicio;

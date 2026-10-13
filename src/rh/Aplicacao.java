@@ -1,5 +1,6 @@
 package rh;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import rh.controlador.*;
 import rh.modelo.*;
@@ -16,10 +17,15 @@ public final class Aplicacao {
     public final FeriasControlador ferias;
     public final FolhaControlador folha;
 
-    public Aplicacao() {
-        Repositorio<Departamento> depRepo = new RepositorioMemoria<>();
-        Repositorio<Funcionario> funcRepo = new RepositorioMemoria<>();
-        Repositorio<Ferias> feriasRepo = new RepositorioMemoria<>();
+    /** Pasta dos dados: -Drh.dados=/caminho, ou ./dados por omissão. */
+    public static Path pastaDados() { return Path.of(System.getProperty("rh.dados", "dados")); }
+
+    public Aplicacao() { this(pastaDados()); }
+
+    public Aplicacao(Path pasta) {
+        Repositorio<Departamento> depRepo = new RepositorioFicheiro<>(pasta.resolve("departamentos.dat"));
+        Repositorio<Funcionario> funcRepo = new RepositorioFicheiro<>(pasta.resolve("funcionarios.dat"));
+        Repositorio<Ferias> feriasRepo = new RepositorioFicheiro<>(pasta.resolve("ferias.dat"));
 
         DepartamentoServico depServ = new DepartamentoServico(depRepo);
         FuncionarioServico funcServ = new FuncionarioServico(funcRepo);
@@ -31,7 +37,8 @@ public final class Aplicacao {
         ferias = new FeriasControlador(feriasServ);
         folha = new FolhaControlador(folhaServ);
 
-        semear(depServ, funcServ);
+        // Dados de exemplo só na primeira execução (quando ainda não há nada gravado)
+        if (depServ.listar().isEmpty() && funcServ.listar().isEmpty()) semear(depServ, funcServ);
     }
 
     private static void semear(DepartamentoServico dep, FuncionarioServico func) {

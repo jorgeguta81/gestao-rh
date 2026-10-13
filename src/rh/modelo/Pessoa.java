@@ -2,6 +2,8 @@ package rh.modelo;
 
 /** Classe base abstracta (herança). */
 public abstract class Pessoa implements Identificavel {
+    private static final long serialVersionUID = 1L;
+
     private int id;
     private String nome;
     private String bi;
