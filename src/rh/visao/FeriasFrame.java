@@ -1,30 +1,23 @@
 package rh.visao;
 
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import rh.Aplicacao;
 import rh.modelo.*;
 import rh.servico.FeriasServico;
 
 /** TELA 3 - Férias. ACÇÃO 2: Solicitar férias (valida o limite de dias úteis). */
-public class FeriasFrame extends JFrame {
+public class FeriasFrame extends TelaBase {
     private final JComboBox<Funcionario> cbFunc = new JComboBox<>();
     private final JTextField tfInicio = new JTextField(LocalDate.now().toString(), 10);
     private final JTextField tfFim = new JTextField(LocalDate.now().plusDays(7).toString(), 10);
     private final DefaultTableModel modelo = Ui.modeloTabela(
             "ID", "Funcionário", "Início", "Fim", "Dias úteis", "Estado");
 
-    private final Aplicacao app;
-
-    public FeriasFrame(Aplicacao app) {
-        super("Férias");
-        this.app = app;
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+    public FeriasFrame(Navegador nav) {
+        super("Férias", nav);
 
         cbFunc.setRenderer(new DefaultListCellRenderer() {
             @Override public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
@@ -53,14 +46,11 @@ public class FeriasFrame extends JFrame {
 
         add(topo, BorderLayout.NORTH);
         add(new JScrollPane(new JTable(modelo)), BorderLayout.CENTER);
+        add(rodapeVoltar(), BorderLayout.SOUTH);
 
-        addWindowListener(new WindowAdapter() {
-            @Override public void windowActivated(WindowEvent e) { carregar(); }
-        });
 
-        carregar();
-        setSize(620, 450);
-        setLocationRelativeTo(null);
+        atualizar();
+        dimensionar(620, 450);
     }
 
     private void solicitar() {
@@ -71,7 +61,7 @@ public class FeriasFrame extends JFrame {
             LocalDate fim = LocalDate.parse(tfFim.getText().trim());
 
             Ferias pedido = app.ferias.solicitar(f.getId(), inicio, fim);
-            carregar();
+            atualizar();
             Ui.info(this, "Pedido #" + pedido.getId() + " registado (" + pedido.diasUteis()
                     + " dias úteis). Estado: " + pedido.getEstado() + ".");
         } catch (DateTimeParseException ex) {
@@ -81,7 +71,8 @@ public class FeriasFrame extends JFrame {
         }
     }
 
-    private void carregar() {
+    @Override
+    protected void atualizar() {
         Object seleccionado = cbFunc.getSelectedItem();
         cbFunc.removeAllItems();
         app.funcionarios.listarActivos().forEach(cbFunc::addItem);

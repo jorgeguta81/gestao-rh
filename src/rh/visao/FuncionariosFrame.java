@@ -1,16 +1,13 @@
 package rh.visao;
 
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.time.LocalDate;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import rh.Aplicacao;
 import rh.modelo.*;
 
 /** TELA 2 - Funcionários. ACÇÃO 1: Admitir funcionário. */
-public class FuncionariosFrame extends JFrame {
+public class FuncionariosFrame extends TelaBase {
     private final JComboBox<String> cbTipo =
             new JComboBox<>(new String[]{"Efectivo", "Gestor", "Contratado", "Estagiário"});
     private final JTextField tfNome = new JTextField(18), tfBi = new JTextField(18),
@@ -21,12 +18,8 @@ public class FuncionariosFrame extends JFrame {
     private final DefaultTableModel modelo = Ui.modeloTabela(
             "ID", "Tipo", "Nome", "BI", "Cargo", "Departamento", "Estado", "Salário bruto");
 
-    private final Aplicacao app;
-
-    public FuncionariosFrame(Aplicacao app) {
-        super("Funcionários");
-        this.app = app;
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+    public FuncionariosFrame(Navegador nav) {
+        super("Funcionários", nav);
 
         cbDep.setRenderer(new DefaultListCellRenderer() {
             @Override public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
@@ -63,16 +56,13 @@ public class FuncionariosFrame extends JFrame {
 
         add(esquerda, BorderLayout.WEST);
         add(new JScrollPane(new JTable(modelo)), BorderLayout.CENTER);
+        add(rodapeVoltar(), BorderLayout.SOUTH);
 
         cbTipo.addActionListener(e -> ajustarCampos());
-        addWindowListener(new WindowAdapter() {
-            @Override public void windowActivated(WindowEvent e) { carregar(); }
-        });
 
         ajustarCampos();
-        carregar();
-        setSize(960, 480);
-        setLocationRelativeTo(null);
+        atualizar();
+        dimensionar(960, 480);
     }
 
     /** Mostra só os campos de valores que fazem sentido para o tipo escolhido. */
@@ -114,7 +104,7 @@ public class FuncionariosFrame extends JFrame {
             };
 
             Funcionario criado = app.funcionarios.admitir(f);
-            carregar();
+            atualizar();
             limpar();
             Ui.info(this, "Funcionário admitido com o ID " + criado.getId() + ".");
         } catch (IllegalArgumentException ex) {
@@ -127,7 +117,8 @@ public class FuncionariosFrame extends JFrame {
         cbTipo.setSelectedIndex(0);
     }
 
-    private void carregar() {
+    @Override
+    protected void atualizar() {
         Object seleccionado = cbDep.getSelectedItem();
         cbDep.removeAllItems();
         app.departamentos.listar().forEach(cbDep::addItem);

@@ -1,11 +1,11 @@
 package rh;
 
 import javax.swing.SwingUtilities;
-import rh.visao.MenuPrincipal;
+import rh.visao.Navegador;
 
 /** Ponto de entrada da aplicação (NetBeans: main.class=rh.Main). */
 public class Main {
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new MenuPrincipal(new Aplicacao()).setVisible(true));
+        SwingUtilities.invokeLater(() -> new Navegador(new Aplicacao()).iniciar());
     }
 }
