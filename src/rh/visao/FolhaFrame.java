@@ -12,7 +12,7 @@ public class FolhaFrame extends TelaBase {
     private final JLabel total = new JLabel(" ");
 
     public FolhaFrame(Navegador nav) {
-        super("Folha de salários", nav);
+        super(nav.app().sessao.tem(rh.modelo.Permissao.FOLHA_VER_TODOS) ? "Folha de salários" : "O meu recibo", nav);
 
         JButton bActualizar = new JButton("Actualizar");
         bActualizar.addActionListener(e -> atualizar());

@@ -3,6 +3,7 @@ package rh.visao;
 import java.awt.*;
 import java.time.LocalDate;
 import javax.swing.*;
+import rh.excecao.RhException;
 import javax.swing.table.DefaultTableModel;
 import rh.modelo.*;
 import rh.servico.DadosFuncionario;
@@ -120,7 +121,7 @@ public class FuncionariosFrame extends TelaBase {
             }
             novo();
             atualizar();
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | RhException ex) {
             Ui.erro(this, ex.getMessage());
         }
     }
@@ -136,7 +137,7 @@ public class FuncionariosFrame extends TelaBase {
             }
             atualizar();
             aoSeleccionar();
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | RhException ex) {
             Ui.erro(this, ex.getMessage());
         }
     }
@@ -147,7 +148,7 @@ public class FuncionariosFrame extends TelaBase {
             app.funcionarios.remover(editandoId);
             novo();
             atualizar();
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | RhException ex) {
             Ui.erro(this, ex.getMessage());
         }
     }
@@ -188,9 +189,13 @@ public class FuncionariosFrame extends TelaBase {
 
     private void modoBotoes() {
         boolean edicao = editandoId >= 0;
+        boolean edita = app.sessao.tem(Permissao.FUNCIONARIOS_EDITAR);
+        boolean remove = app.sessao.tem(Permissao.FUNCIONARIOS_REMOVER);
         bGravar.setText(edicao ? "Guardar" : "Admitir");
-        bEstado.setEnabled(edicao);
-        bRemover.setEnabled(edicao);
+        bGravar.setEnabled(edita);
+        bEstado.setEnabled(edicao && edita);
+        bRemover.setVisible(remove);
+        bRemover.setEnabled(edicao && remove);
         if (!edicao) bEstado.setText("Demitir");
     }
 

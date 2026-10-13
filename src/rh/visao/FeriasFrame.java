@@ -4,6 +4,7 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import javax.swing.*;
+import rh.excecao.RhException;
 import javax.swing.table.DefaultTableModel;
 import rh.modelo.*;
 import rh.servico.FeriasServico;
@@ -49,6 +50,8 @@ public class FeriasFrame extends TelaBase {
         bCancelar.addActionListener(e -> accao(id -> {
             if (Ui.confirmar(this, "Cancelar o pedido #" + id + "?")) app.ferias.cancelar(id);
         }));
+        bAprovar.setVisible(app.sessao.tem(Permissao.FERIAS_DECIDIR));
+        bRejeitar.setVisible(app.sessao.tem(Permissao.FERIAS_DECIDIR));
         JPanel decisao = new JPanel(new FlowLayout(FlowLayout.LEFT));
         decisao.add(new JLabel("Pedido seleccionado:"));
         decisao.add(bAprovar); decisao.add(bRejeitar); decisao.add(bCancelar);
@@ -77,7 +80,7 @@ public class FeriasFrame extends TelaBase {
             if (id < 0) throw new IllegalArgumentException("Seleccione um pedido na tabela.");
             acao.accept(id);
             atualizar();
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | RhException ex) {
             Ui.erro(this, ex.getMessage());
         }
     }
@@ -95,7 +98,7 @@ public class FeriasFrame extends TelaBase {
                     + " dias úteis). Estado: " + pedido.getEstado() + ".");
         } catch (DateTimeParseException ex) {
             Ui.erro(this, "Data inválida. Use o formato AAAA-MM-DD, por exemplo 2026-12-15.");
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | RhException ex) {
             Ui.erro(this, ex.getMessage());
         }
     }

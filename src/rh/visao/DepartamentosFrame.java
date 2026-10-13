@@ -2,8 +2,10 @@ package rh.visao;
 
 import java.awt.*;
 import javax.swing.*;
+import rh.excecao.RhException;
 import javax.swing.table.DefaultTableModel;
 import rh.modelo.Departamento;
+import rh.modelo.Permissao;
 
 /** TELA - Departamentos: criar, editar e remover. */
 public class DepartamentosFrame extends TelaBase {
@@ -49,7 +51,7 @@ public class DepartamentosFrame extends TelaBase {
             else app.departamentos.atualizar(editandoId, tfNome.getText(), tfDescricao.getText());
             novo();
             atualizar();
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | RhException ex) {
             Ui.erro(this, ex.getMessage());
         }
     }
@@ -60,7 +62,7 @@ public class DepartamentosFrame extends TelaBase {
             app.departamentos.remover(editandoId);
             novo();
             atualizar();
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | RhException ex) {
             Ui.erro(this, ex.getMessage());
         }
     }
@@ -83,8 +85,10 @@ public class DepartamentosFrame extends TelaBase {
     }
 
     private void modoBotoes() {
+        boolean edita = app.sessao.tem(Permissao.DEPARTAMENTOS_EDITAR);
         bGravar.setText(editandoId >= 0 ? "Guardar" : "Criar");
-        bRemover.setEnabled(editandoId >= 0);
+        bGravar.setEnabled(edita);
+        bRemover.setEnabled(editandoId >= 0 && edita);
     }
 
     @Override

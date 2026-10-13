@@ -1,0 +1,10 @@
+package rh.modelo;
+
+/** Acções que podem ser permitidas ou negadas a um perfil. */
+public enum Permissao {
+    FUNCIONARIOS_VER, FUNCIONARIOS_EDITAR, FUNCIONARIOS_REMOVER,
+    DEPARTAMENTOS_VER, DEPARTAMENTOS_EDITAR,
+    FERIAS_SOLICITAR, FERIAS_VER_TODAS, FERIAS_DECIDIR,
+    FOLHA_VER_TODOS, RECIBO_PROPRIO,
+    UTILIZADORES_GERIR
+}

@@ -2,19 +2,50 @@ package rh.controlador;
 
 import java.time.LocalDate;
 import java.util.List;
+import rh.excecao.AcessoNegadoException;
 import rh.modelo.Ferias;
+import rh.modelo.Permissao;
 import rh.servico.FeriasServico;
 
 /** Controlador (MVC): pedidos de férias. */
 public class FeriasControlador {
     private final FeriasServico servico;
+    private final Sessao sessao;
 
-    public FeriasControlador(FeriasServico servico) { this.servico = servico; }
+    public FeriasControlador(FeriasServico servico, Sessao sessao) {
+        this.servico = servico;
+        this.sessao = sessao;
+    }
 
+    /** RH/Admin registam para qualquer funcionário; os restantes só para si. */
     public Ferias solicitar(int funcionarioId, LocalDate inicio, LocalDate fim) {
+        sessao.exigir(Permissao.FERIAS_SOLICITAR);
+        if (!sessao.tem(Permissao.FERIAS_DECIDIR) && funcionarioId != sessao.funcionarioId())
+            throw new AcessoNegadoException("Só pode solicitar férias para si próprio.");
         return servico.solicitar(funcionarioId, inicio, fim);
     }
-    public void decidir(int feriasId, boolean aprovar) { servico.decidir(feriasId, aprovar); }
-    public void cancelar(int feriasId) { servico.cancelar(feriasId); }
-    public List<Ferias> listar() { return servico.listar(); }
+
+    /** Quem decide não pode decidir o seu próprio pedido (separação de funções). */
+    public void decidir(int feriasId, boolean aprovar) {
+        sessao.exigir(Permissao.FERIAS_DECIDIR);
+        Ferias f = servico.buscar(feriasId).orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado."));
+        if (f.getFuncionarioId() == sessao.funcionarioId())
+            throw new AcessoNegadoException("Não pode decidir o seu próprio pedido de férias.");
+        servico.decidir(feriasId, aprovar);
+    }
+
+    public void cancelar(int feriasId) {
+        sessao.exigirAutenticado();
+        Ferias f = servico.buscar(feriasId).orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado."));
+        if (!sessao.tem(Permissao.FERIAS_DECIDIR) && f.getFuncionarioId() != sessao.funcionarioId())
+            throw new AcessoNegadoException("Só pode cancelar os seus próprios pedidos.");
+        servico.cancelar(feriasId);
+    }
+
+    /** RH/Admin vêem todos; os restantes só os seus. */
+    public List<Ferias> listar() {
+        sessao.exigirAutenticado();
+        boolean todas = sessao.tem(Permissao.FERIAS_VER_TODAS);
+        return servico.listar().stream().filter(f -> todas || f.getFuncionarioId() == sessao.funcionarioId()).toList();
+    }
 }

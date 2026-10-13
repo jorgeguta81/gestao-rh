@@ -2,15 +2,17 @@ package rh.visao;
 
 import java.awt.*;
 import javax.swing.*;
+import rh.modelo.Permissao;
+import rh.modelo.Utilizador;
 
-/** TELA 1 - Menu principal. Abre as restantes telas através do Navegador. */
+/** TELA 1 - Menu principal. Só mostra o que o perfil do utilizador pode usar. */
 public class MenuPrincipal extends JFrame {
-
-    private final Navegador nav;
 
     public MenuPrincipal(Navegador nav) {
         super("Gestão de Recursos Humanos");
-        this.nav = nav;
+        var sessao = nav.app().sessao;
+        Utilizador u = sessao.utilizador();
+
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override public void windowClosing(java.awt.event.WindowEvent e) { nav.sair(); }
@@ -18,31 +20,35 @@ public class MenuPrincipal extends JFrame {
 
         JLabel titulo = new JLabel("Gestão de Recursos Humanos", SwingConstants.CENTER);
         titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 20f));
-        titulo.setBorder(BorderFactory.createEmptyBorder(16, 10, 8, 10));
+        JLabel quem = new JLabel(u.getNomeUtilizador() + "  |  " + u.getPerfil(), SwingConstants.CENTER);
+        JPanel topo = new JPanel(new GridLayout(2, 1));
+        topo.setBorder(BorderFactory.createEmptyBorder(16, 10, 8, 10));
+        topo.add(titulo);
+        topo.add(quem);
 
-        JButton bFunc = new JButton("Funcionários");
-        JButton bFerias = new JButton("Férias");
-        JButton bDep = new JButton("Departamentos");
-        JButton bFolha = new JButton("Folha de salários");
-        JButton bSair = new JButton("Sair");
-
-        bFunc.addActionListener(e -> nav.abrir(Navegador.Tela.FUNCIONARIOS));
-        bFerias.addActionListener(e -> nav.abrir(Navegador.Tela.FERIAS));
-        bFolha.addActionListener(e -> nav.abrir(Navegador.Tela.FOLHA));
-        bDep.addActionListener(e -> nav.abrir(Navegador.Tela.DEPARTAMENTOS));
-        bSair.addActionListener(e -> nav.sair());
-
-        JPanel botoes = new JPanel(new GridLayout(5, 1, 0, 10));
+        JPanel botoes = new JPanel(new GridLayout(0, 1, 0, 10));
         botoes.setBorder(BorderFactory.createEmptyBorder(10, 40, 24, 40));
-        botoes.add(bFunc);
-        botoes.add(bDep);
-        botoes.add(bFerias);
-        botoes.add(bFolha);
-        botoes.add(bSair);
+        if (sessao.tem(Permissao.FUNCIONARIOS_VER)) botoes.add(botao("Funcionários", () -> nav.abrir(Navegador.Tela.FUNCIONARIOS)));
+        if (sessao.tem(Permissao.DEPARTAMENTOS_VER)) botoes.add(botao("Departamentos", () -> nav.abrir(Navegador.Tela.DEPARTAMENTOS)));
+        botoes.add(botao(sessao.tem(Permissao.FERIAS_VER_TODAS) ? "Férias" : "As minhas férias",
+                () -> nav.abrir(Navegador.Tela.FERIAS)));
+        botoes.add(botao(sessao.tem(Permissao.FOLHA_VER_TODOS) ? "Folha de salários" : "O meu recibo",
+                () -> nav.abrir(Navegador.Tela.FOLHA)));
+        if (sessao.tem(Permissao.UTILIZADORES_GERIR)) botoes.add(botao("Utilizadores", () -> nav.abrir(Navegador.Tela.UTILIZADORES)));
+        botoes.add(botao("Alterar palavra-passe", () -> nav.alterarPassword(this)));
+        botoes.add(botao("Terminar sessão", nav::terminarSessao));
+        botoes.add(botao("Sair", nav::sair));
 
-        add(titulo, BorderLayout.NORTH);
+        add(topo, BorderLayout.NORTH);
         add(botoes, BorderLayout.CENTER);
-        setSize(360, 390);
+        pack();
+        setSize(Math.max(getWidth(), 380), getHeight() + 20);
         setLocationRelativeTo(null);
+    }
+
+    private static JButton botao(String texto, Runnable acao) {
+        JButton b = new JButton(texto);
+        b.addActionListener(e -> acao.run());
+        return b;
     }
 }

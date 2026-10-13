@@ -12,6 +12,8 @@ import rh.servico.*;
  * As telas (visão) só conhecem os controladores.
  */
 public final class Aplicacao {
+    public final Sessao sessao = new Sessao();
+    public final UtilizadorControlador utilizadores;
     public final DepartamentoControlador departamentos;
     public final FuncionarioControlador funcionarios;
     public final FeriasControlador ferias;
@@ -26,19 +28,24 @@ public final class Aplicacao {
         Repositorio<Departamento> depRepo = new RepositorioFicheiro<>(pasta.resolve("departamentos.dat"));
         Repositorio<Funcionario> funcRepo = new RepositorioFicheiro<>(pasta.resolve("funcionarios.dat"));
         Repositorio<Ferias> feriasRepo = new RepositorioFicheiro<>(pasta.resolve("ferias.dat"));
+        Repositorio<Utilizador> utilRepo = new RepositorioFicheiro<>(pasta.resolve("utilizadores.dat"));
 
         DepartamentoServico depServ = new DepartamentoServico(depRepo, funcRepo);
         FuncionarioServico funcServ = new FuncionarioServico(funcRepo, feriasRepo);
         FeriasServico feriasServ = new FeriasServico(feriasRepo, funcRepo);
         FolhaSalarioServico folhaServ = new FolhaSalarioServico(funcRepo);
+        UtilizadorServico utilServ = new UtilizadorServico(utilRepo, funcRepo);
 
-        departamentos = new DepartamentoControlador(depServ);
-        funcionarios = new FuncionarioControlador(funcServ);
-        ferias = new FeriasControlador(feriasServ);
-        folha = new FolhaControlador(folhaServ);
+        departamentos = new DepartamentoControlador(depServ, sessao);
+        funcionarios = new FuncionarioControlador(funcServ, sessao);
+        ferias = new FeriasControlador(feriasServ, sessao);
+        folha = new FolhaControlador(folhaServ, sessao);
+        utilizadores = new UtilizadorControlador(utilServ, sessao);
 
         // Dados de exemplo só na primeira execução (quando ainda não há nada gravado)
-        if (depServ.listar().isEmpty() && funcServ.listar().isEmpty()) semear(depServ, funcServ);
+        boolean primeiraVez = depServ.listar().isEmpty() && funcServ.listar().isEmpty();
+        if (primeiraVez) semear(depServ, funcServ);
+        if (utilServ.listar().isEmpty()) semearUtilizadores(utilServ, primeiraVez);
     }
 
     private static void semear(DepartamentoServico dep, FuncionarioServico func) {
@@ -52,5 +59,17 @@ public final class Aplicacao {
                 "Consultora", 1, LocalDate.of(2024, 1, 10), 500, 120));
         func.admitir(new Estagiario("João Cossa", "110100000004D", "joao@empresa.co.mz", "844444444",
                 "Estagiário", 2, LocalDate.of(2025, 2, 3), 8000));
+    }
+
+    /**
+     * Contas iniciais. Todas obrigam a mudar a palavra-passe no primeiro acesso.
+     * Em instalações reais só é criado o administrador.
+     */
+    private static void semearUtilizadores(UtilizadorServico us, boolean comDemonstracao) {
+        us.criar("admin", "Admin@123", Perfil.ADMINISTRADOR, Utilizador.SEM_FUNCIONARIO, true);
+        if (comDemonstracao) {
+            us.criar("rh", "Rh@12345", Perfil.GESTOR_RH, 1, true);          // Ana Macuácua
+            us.criar("carlos", "Func@1234", Perfil.FUNCIONARIO, 2, true);   // Carlos Sitoe
+        }
     }
 }
