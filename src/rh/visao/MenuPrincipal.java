@@ -1,13 +1,17 @@
-package rh.ui;
+package rh.visao;
 
 import java.awt.*;
 import javax.swing.*;
+import rh.Aplicacao;
 
 /** TELA 1 - Menu principal. Execute ESTA classe para abrir a aplicação. */
 public class MenuPrincipal extends JFrame {
 
-    public MenuPrincipal() {
+    private final Aplicacao app;
+
+    public MenuPrincipal(Aplicacao app) {
         super("Gestão de Recursos Humanos");
+        this.app = app;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         JLabel titulo = new JLabel("Gestão de Recursos Humanos", SwingConstants.CENTER);
@@ -19,9 +23,9 @@ public class MenuPrincipal extends JFrame {
         JButton bFolha = new JButton("Folha de salários");
         JButton bSair = new JButton("Sair");
 
-        bFunc.addActionListener(e -> new FuncionariosFrame().setVisible(true));
-        bFerias.addActionListener(e -> new FeriasFrame().setVisible(true));
-        bFolha.addActionListener(e -> new FolhaFrame().setVisible(true));
+        bFunc.addActionListener(e -> new FuncionariosFrame(app).setVisible(true));
+        bFerias.addActionListener(e -> new FeriasFrame(app).setVisible(true));
+        bFolha.addActionListener(e -> new FolhaFrame(app).setVisible(true));
         bSair.addActionListener(e -> System.exit(0));
 
         JPanel botoes = new JPanel(new GridLayout(4, 1, 0, 10));
@@ -38,6 +42,6 @@ public class MenuPrincipal extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new MenuPrincipal().setVisible(true));
+        SwingUtilities.invokeLater(() -> new MenuPrincipal(new Aplicacao()).setVisible(true));
     }
 }

@@ -1,4 +1,4 @@
-package rh.ui;
+package rh.visao;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -6,6 +6,7 @@ import java.awt.event.WindowEvent;
 import java.time.LocalDate;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import rh.Aplicacao;
 import rh.modelo.*;
 
 /** TELA 2 - Funcionários. ACÇÃO 1: Admitir funcionário. */
@@ -20,8 +21,11 @@ public class FuncionariosFrame extends JFrame {
     private final DefaultTableModel modelo = Ui.modeloTabela(
             "ID", "Tipo", "Nome", "BI", "Cargo", "Departamento", "Estado", "Salário bruto");
 
-    public FuncionariosFrame() {
+    private final Aplicacao app;
+
+    public FuncionariosFrame(Aplicacao app) {
         super("Funcionários");
+        this.app = app;
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
         cbDep.setRenderer(new DefaultListCellRenderer() {
@@ -109,7 +113,7 @@ public class FuncionariosFrame extends JFrame {
                         Ui.numero(tfV1, "Bolsa"));
             };
 
-            Funcionario criado = Contexto.funcionarios.admitir(f);
+            Funcionario criado = app.funcionarios.admitir(f);
             carregar();
             limpar();
             Ui.info(this, "Funcionário admitido com o ID " + criado.getId() + ".");
@@ -126,13 +130,13 @@ public class FuncionariosFrame extends JFrame {
     private void carregar() {
         Object seleccionado = cbDep.getSelectedItem();
         cbDep.removeAllItems();
-        Contexto.departamentos.listarTodos().forEach(cbDep::addItem);
+        app.departamentos.listar().forEach(cbDep::addItem);
         if (seleccionado != null) cbDep.setSelectedItem(seleccionado);
 
         modelo.setRowCount(0);
-        for (Funcionario f : Contexto.funcionarios.listar()) {
+        for (Funcionario f : app.funcionarios.listar()) {
             modelo.addRow(new Object[]{f.getId(), f.getTipo(), f.getNome(), f.getBi(), f.getCargo(),
-                    Contexto.nomeDepartamento(f.getDepartamentoId()),
+                    app.departamentos.nome(f.getDepartamentoId()),
                     f.isAtivo() ? "Activo" : "Inactivo", Ui.dinheiro(f.calcularSalarioBruto())});
         }
     }

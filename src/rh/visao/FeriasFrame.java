@@ -1,4 +1,4 @@
-package rh.ui;
+package rh.visao;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import rh.Aplicacao;
 import rh.modelo.*;
 import rh.servico.FeriasServico;
 
@@ -18,8 +19,11 @@ public class FeriasFrame extends JFrame {
     private final DefaultTableModel modelo = Ui.modeloTabela(
             "ID", "Funcionário", "Início", "Fim", "Dias úteis", "Estado");
 
-    public FeriasFrame() {
+    private final Aplicacao app;
+
+    public FeriasFrame(Aplicacao app) {
         super("Férias");
+        this.app = app;
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
         cbFunc.setRenderer(new DefaultListCellRenderer() {
@@ -66,7 +70,7 @@ public class FeriasFrame extends JFrame {
             LocalDate inicio = LocalDate.parse(tfInicio.getText().trim());
             LocalDate fim = LocalDate.parse(tfFim.getText().trim());
 
-            Ferias pedido = Contexto.ferias.solicitar(f.getId(), inicio, fim);
+            Ferias pedido = app.ferias.solicitar(f.getId(), inicio, fim);
             carregar();
             Ui.info(this, "Pedido #" + pedido.getId() + " registado (" + pedido.diasUteis()
                     + " dias úteis). Estado: " + pedido.getEstado() + ".");
@@ -80,12 +84,12 @@ public class FeriasFrame extends JFrame {
     private void carregar() {
         Object seleccionado = cbFunc.getSelectedItem();
         cbFunc.removeAllItems();
-        Contexto.funcionarios.listar().stream().filter(Funcionario::isAtivo).forEach(cbFunc::addItem);
+        app.funcionarios.listarActivos().forEach(cbFunc::addItem);
         if (seleccionado != null) cbFunc.setSelectedItem(seleccionado);
 
         modelo.setRowCount(0);
-        for (Ferias fe : Contexto.ferias.listar()) {
-            modelo.addRow(new Object[]{fe.getId(), Contexto.nomeFuncionario(fe.getFuncionarioId()),
+        for (Ferias fe : app.ferias.listar()) {
+            modelo.addRow(new Object[]{fe.getId(), app.funcionarios.nome(fe.getFuncionarioId()),
                     fe.getInicio(), fe.getFim(), fe.diasUteis(), fe.getEstado()});
         }
     }

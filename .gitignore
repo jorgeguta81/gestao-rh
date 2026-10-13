@@ -1,0 +1,10 @@
+# NetBeans / Ant
+build/
+dist/
+nbproject/private/
+# Dados gerados em execução
+dados/
+*.log
+# SO
+.DS_Store
+Thumbs.db

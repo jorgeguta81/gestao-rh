@@ -1,11 +1,12 @@
-package rh.ui;
+package rh.visao;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import rh.modelo.Funcionario;
+import rh.Aplicacao;
+import rh.servico.FolhaSalarioServico.LinhaFolha;
 
 /** TELA 4 - Folha de salários (só consulta; usa o polimorfismo de calcularSalarioBruto/Inss). */
 public class FolhaFrame extends JFrame {
@@ -13,8 +14,11 @@ public class FolhaFrame extends JFrame {
             "ID", "Nome", "Tipo", "Bruto (MT)", "INSS (MT)", "Líquido (MT)");
     private final JLabel total = new JLabel(" ");
 
-    public FolhaFrame() {
+    private final Aplicacao app;
+
+    public FolhaFrame(Aplicacao app) {
         super("Folha de salários");
+        this.app = app;
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
         JButton bActualizar = new JButton("Actualizar");
@@ -41,13 +45,11 @@ public class FolhaFrame extends JFrame {
     private void carregar() {
         modelo.setRowCount(0);
         double totalBruto = 0, totalLiquido = 0;
-        for (Funcionario f : Contexto.funcionarios.listar()) {
-            if (!f.isAtivo()) continue;
-            modelo.addRow(new Object[]{f.getId(), f.getNome(), f.getTipo(),
-                    Ui.dinheiro(f.calcularSalarioBruto()), Ui.dinheiro(f.calcularInss()),
-                    Ui.dinheiro(f.calcularSalarioLiquido())});
-            totalBruto += f.calcularSalarioBruto();
-            totalLiquido += f.calcularSalarioLiquido();
+        for (LinhaFolha l : app.folha.linhas()) {
+            modelo.addRow(new Object[]{l.id(), l.nome(), l.tipo(),
+                    Ui.dinheiro(l.bruto()), Ui.dinheiro(l.inss()), Ui.dinheiro(l.liquido())});
+            totalBruto += l.bruto();
+            totalLiquido += l.liquido();
         }
         total.setText("TOTAL: Bruto " + Ui.dinheiro(totalBruto) + " MT | Líquido " + Ui.dinheiro(totalLiquido) + " MT");
     }

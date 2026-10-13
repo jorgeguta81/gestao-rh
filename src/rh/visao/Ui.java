@@ -1,4 +1,4 @@
-package rh.ui;
+package rh.visao;
 
 import java.awt.*;
 import javax.swing.*;
