@@ -14,5 +14,7 @@ public class FeriasControlador {
     public Ferias solicitar(int funcionarioId, LocalDate inicio, LocalDate fim) {
         return servico.solicitar(funcionarioId, inicio, fim);
     }
+    public void decidir(int feriasId, boolean aprovar) { servico.decidir(feriasId, aprovar); }
+    public void cancelar(int feriasId) { servico.cancelar(feriasId); }
     public List<Ferias> listar() { return servico.listar(); }
 }

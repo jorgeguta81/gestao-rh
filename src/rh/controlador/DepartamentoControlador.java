@@ -12,5 +12,9 @@ public class DepartamentoControlador {
 
     public List<Departamento> listar() { return servico.listar(); }
 
+    public Departamento criar(String nome, String descricao) { return servico.criar(new Departamento(nome, descricao)); }
+    public Departamento atualizar(int id, String nome, String descricao) { return servico.atualizar(id, nome, descricao); }
+    public void remover(int id) { servico.remover(id); }
+
     public String nome(int id) { return servico.buscar(id).map(Departamento::getNome).orElse("?"); }
 }

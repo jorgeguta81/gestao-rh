@@ -15,6 +15,7 @@ public class FeriasFrame extends TelaBase {
     private final JTextField tfFim = new JTextField(LocalDate.now().plusDays(7).toString(), 10);
     private final DefaultTableModel modelo = Ui.modeloTabela(
             "ID", "Funcionário", "Início", "Fim", "Dias úteis", "Estado");
+    private final JTable tabela = new JTable(modelo);
 
     public FeriasFrame(Navegador nav) {
         super("Férias", nav);
@@ -40,17 +41,45 @@ public class FeriasFrame extends TelaBase {
         JPanel botoes = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         botoes.add(bSolicitar);
 
+        JButton bAprovar = new JButton("Aprovar");
+        JButton bRejeitar = new JButton("Rejeitar");
+        JButton bCancelar = new JButton("Cancelar pedido");
+        bAprovar.addActionListener(e -> accao(id -> app.ferias.decidir(id, true)));
+        bRejeitar.addActionListener(e -> accao(id -> app.ferias.decidir(id, false)));
+        bCancelar.addActionListener(e -> accao(id -> {
+            if (Ui.confirmar(this, "Cancelar o pedido #" + id + "?")) app.ferias.cancelar(id);
+        }));
+        JPanel decisao = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        decisao.add(new JLabel("Pedido seleccionado:"));
+        decisao.add(bAprovar); decisao.add(bRejeitar); decisao.add(bCancelar);
+        JPanel sul = new JPanel(new BorderLayout());
+        sul.add(decisao, BorderLayout.WEST);
+        sul.add(rodapeVoltar(), BorderLayout.EAST);
+
         JPanel topo = new JPanel(new BorderLayout());
         topo.add(form, BorderLayout.CENTER);
         topo.add(botoes, BorderLayout.SOUTH);
 
         add(topo, BorderLayout.NORTH);
-        add(new JScrollPane(new JTable(modelo)), BorderLayout.CENTER);
-        add(rodapeVoltar(), BorderLayout.SOUTH);
+        tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        add(new JScrollPane(tabela), BorderLayout.CENTER);
+        add(sul, BorderLayout.SOUTH);
 
 
         atualizar();
         dimensionar(620, 450);
+    }
+
+    /** Executa uma acção sobre o pedido seleccionado e recarrega a tabela. */
+    private void accao(java.util.function.IntConsumer acao) {
+        try {
+            int id = Ui.idSeleccionado(tabela);
+            if (id < 0) throw new IllegalArgumentException("Seleccione um pedido na tabela.");
+            acao.accept(id);
+            atualizar();
+        } catch (IllegalArgumentException ex) {
+            Ui.erro(this, ex.getMessage());
+        }
     }
 
     private void solicitar() {

@@ -2,6 +2,7 @@ package rh.servico;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import rh.modelo.*;
 import rh.repositorio.Repositorio;
 
@@ -48,5 +49,15 @@ public class FeriasServico {
     }
 
     public List<Ferias> listar() { return repo.listarTodos(); }
-    public boolean cancelar(int id) { return repo.remover(id); }
+    public Optional<Ferias> buscar(int id) { return repo.buscarPorId(id); }
+
+    /** Só se cancelam pedidos pendentes, ou aprovados que ainda não começaram. */
+    public void cancelar(int id) {
+        Ferias fe = repo.buscarPorId(id).orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado."));
+        boolean pendente = fe.getEstado() == EstadoFerias.PENDENTE;
+        boolean aprovadaFutura = fe.getEstado() == EstadoFerias.APROVADA && fe.getInicio().isAfter(LocalDate.now());
+        if (!pendente && !aprovadaFutura)
+            throw new IllegalArgumentException("Só se podem cancelar pedidos pendentes ou aprovados que ainda não começaram.");
+        repo.remover(id);
+    }
 }

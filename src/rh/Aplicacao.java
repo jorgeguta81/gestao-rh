@@ -27,8 +27,8 @@ public final class Aplicacao {
         Repositorio<Funcionario> funcRepo = new RepositorioFicheiro<>(pasta.resolve("funcionarios.dat"));
         Repositorio<Ferias> feriasRepo = new RepositorioFicheiro<>(pasta.resolve("ferias.dat"));
 
-        DepartamentoServico depServ = new DepartamentoServico(depRepo);
-        FuncionarioServico funcServ = new FuncionarioServico(funcRepo);
+        DepartamentoServico depServ = new DepartamentoServico(depRepo, funcRepo);
+        FuncionarioServico funcServ = new FuncionarioServico(funcRepo, feriasRepo);
         FeriasServico feriasServ = new FeriasServico(feriasRepo, funcRepo);
         FolhaSalarioServico folhaServ = new FolhaSalarioServico(funcRepo);
 
