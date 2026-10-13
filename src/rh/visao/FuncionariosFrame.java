@@ -12,6 +12,7 @@ import rh.servico.DadosFuncionario;
 public class FuncionariosFrame extends TelaBase {
     private final JComboBox<TipoFuncionario> cbTipo = new JComboBox<>(TipoFuncionario.values());
     private final JTextField tfNome = new JTextField(18), tfBi = new JTextField(18),
+            tfNuit = new JTextField(18), tfNascimento = new JTextField(18),
             tfEmail = new JTextField(18), tfTel = new JTextField(18), tfCargo = new JTextField(18),
             tfAdmissao = new JTextField(18),
             tfV1 = new JTextField(10), tfV2 = new JTextField(10), tfV3 = new JTextField(10);
@@ -44,14 +45,16 @@ public class FuncionariosFrame extends TelaBase {
         Ui.linha(form, 0, new JLabel("Tipo:"), cbTipo);
         Ui.linha(form, 1, new JLabel("Nome:"), tfNome);
         Ui.linha(form, 2, new JLabel("BI:"), tfBi);
-        Ui.linha(form, 3, new JLabel("Email:"), tfEmail);
-        Ui.linha(form, 4, new JLabel("Telefone:"), tfTel);
-        Ui.linha(form, 5, new JLabel("Cargo:"), tfCargo);
-        Ui.linha(form, 6, new JLabel("Departamento:"), cbDep);
-        Ui.linha(form, 7, new JLabel("Admissão (AAAA-MM-DD):"), tfAdmissao);
-        Ui.linha(form, 8, lbV1, tfV1);
-        Ui.linha(form, 9, lbV2, tfV2);
-        Ui.linha(form, 10, lbV3, tfV3);
+        Ui.linha(form, 3, new JLabel("NUIT (9 dígitos):"), tfNuit);
+        Ui.linha(form, 4, new JLabel("Nascimento (AAAA-MM-DD):"), tfNascimento);
+        Ui.linha(form, 5, new JLabel("Email:"), tfEmail);
+        Ui.linha(form, 6, new JLabel("Telefone:"), tfTel);
+        Ui.linha(form, 7, new JLabel("Cargo:"), tfCargo);
+        Ui.linha(form, 8, new JLabel("Departamento:"), cbDep);
+        Ui.linha(form, 9, new JLabel("Admissão (AAAA-MM-DD):"), tfAdmissao);
+        Ui.linha(form, 10, lbV1, tfV1);
+        Ui.linha(form, 11, lbV2, tfV2);
+        Ui.linha(form, 12, lbV3, tfV3);
 
         bNovo.addActionListener(e -> novo());
         bGravar.addActionListener(e -> gravar());
@@ -81,7 +84,7 @@ public class FuncionariosFrame extends TelaBase {
         ajustarCampos();
         atualizar();
         novo();
-        dimensionar(1080, 560);
+        dimensionar(1080, 620);
     }
 
     /** Mostra só os campos de valores que fazem sentido para o tipo escolhido. */
@@ -105,8 +108,9 @@ public class FuncionariosFrame extends TelaBase {
         if (t.rotuloValor(0) != null) v1 = Ui.numero(tfV1, t.rotuloValor(0));
         if (t.rotuloValor(1) != null) v2 = t == TipoFuncionario.CONTRATADO ? Ui.inteiro(tfV2, t.rotuloValor(1)) : Ui.numero(tfV2, t.rotuloValor(1));
         if (t.rotuloValor(2) != null) v3 = Ui.numero(tfV3, t.rotuloValor(2));
-        return new DadosFuncionario(t, tfNome.getText().trim(), tfBi.getText().trim(), tfEmail.getText().trim(),
-                tfTel.getText().trim(), tfCargo.getText().trim(), dep.getId(), Ui.data(tfAdmissao, "Admissão"), v1, v2, v3);
+        return new DadosFuncionario(t, tfNome.getText().trim(), tfBi.getText().trim(), tfNuit.getText().trim(),
+                Ui.data(tfNascimento, "Nascimento"), tfEmail.getText().trim(), tfTel.getText().trim(),
+                tfCargo.getText().trim(), dep.getId(), Ui.data(tfAdmissao, "Admissão"), v1, v2, v3);
     }
 
     private void gravar() {
@@ -157,7 +161,7 @@ public class FuncionariosFrame extends TelaBase {
     private void novo() {
         editandoId = -1;
         tabela.clearSelection();
-        for (JTextField t : new JTextField[]{tfNome, tfBi, tfEmail, tfTel, tfCargo, tfV1, tfV2, tfV3}) t.setText("");
+        for (JTextField t : new JTextField[]{tfNome, tfBi, tfNuit, tfNascimento, tfEmail, tfTel, tfCargo, tfV1, tfV2, tfV3}) t.setText("");
         tfAdmissao.setText(LocalDate.now().toString());
         cbTipo.setEnabled(true);
         cbTipo.setSelectedIndex(0);
@@ -173,7 +177,9 @@ public class FuncionariosFrame extends TelaBase {
         DadosFuncionario d = DadosFuncionario.de(f);
         cbTipo.setSelectedItem(d.tipo());
         cbTipo.setEnabled(false); // o tipo não se altera depois de admitido
-        tfNome.setText(d.nome()); tfBi.setText(d.bi()); tfEmail.setText(d.email());
+        tfNome.setText(d.nome()); tfBi.setText(d.bi()); tfNuit.setText(d.nuit());
+        tfNascimento.setText(d.dataNascimento() == null ? "" : d.dataNascimento().toString());
+        tfEmail.setText(d.email());
         tfTel.setText(d.telefone()); tfCargo.setText(d.cargo());
         tfAdmissao.setText(String.valueOf(d.dataAdmissao()));
         for (int i = 0; i < cbDep.getItemCount(); i++)

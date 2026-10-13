@@ -35,6 +35,7 @@ public class MenuPrincipal extends JFrame {
         botoes.add(botao(sessao.tem(Permissao.FOLHA_VER_TODOS) ? "Folha de salários" : "O meu recibo",
                 () -> nav.abrir(Navegador.Tela.FOLHA)));
         if (sessao.tem(Permissao.UTILIZADORES_GERIR)) botoes.add(botao("Utilizadores", () -> nav.abrir(Navegador.Tela.UTILIZADORES)));
+        if (sessao.tem(Permissao.DEFINICOES_EDITAR)) botoes.add(botao("Definições da empresa", () -> nav.definicoes(this)));
         botoes.add(botao("Alterar palavra-passe", () -> nav.alterarPassword(this)));
         botoes.add(botao("Terminar sessão", nav::terminarSessao));
         botoes.add(botao("Sair", nav::sair));

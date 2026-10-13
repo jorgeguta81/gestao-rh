@@ -24,4 +24,7 @@ public class Estagiario extends Funcionario {
     /** Polimorfismo: estagiário não desconta INSS neste modelo. */
     @Override
     public double calcularInss() { return 0; }
+
+    @Override
+    public double calcularInssPatronal() { return 0; }
 }

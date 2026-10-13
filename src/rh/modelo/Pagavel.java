@@ -1,16 +1,32 @@
 package rh.modelo;
 
-/** Interface: quem recebe salário. Cada tipo de funcionário calcula o bruto à sua maneira. */
+import static rh.config.ParametrosLegais.*;
+
+/**
+ * Quem recebe salário. Cada tipo de funcionário calcula o bruto à sua maneira;
+ * os descontos seguem a lei (ver rh.config.ParametrosLegais).
+ */
 public interface Pagavel {
-    double TAXA_INSS = 0.03; // 3% a cargo do trabalhador (confirme a taxa em vigor)
 
     double calcularSalarioBruto();
 
+    /** INSS a cargo do trabalhador (3%). */
     default double calcularInss() {
-        return calcularSalarioBruto() * TAXA_INSS;
+        return arredondar(calcularSalarioBruto() * INSS_TRABALHADOR);
+    }
+
+    /** Contribuição patronal para o INSS (4%): custo da empresa, não é descontada ao trabalhador. */
+    default double calcularInssPatronal() {
+        return arredondar(calcularSalarioBruto() * INSS_EMPREGADOR);
+    }
+
+    /** IRPS retido na fonte (tabela mensal, 0 dependentes). */
+    default double calcularIrps() {
+        double base = calcularSalarioBruto() - (INSS_REDUZ_BASE_IRPS ? calcularInss() : 0);
+        return irps(base);
     }
 
     default double calcularSalarioLiquido() {
-        return calcularSalarioBruto() - calcularInss();
+        return arredondar(calcularSalarioBruto() - calcularInss() - calcularIrps());
     }
 }

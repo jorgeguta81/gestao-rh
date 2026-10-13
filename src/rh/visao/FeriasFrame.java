@@ -7,15 +7,16 @@ import javax.swing.*;
 import rh.excecao.RhException;
 import javax.swing.table.DefaultTableModel;
 import rh.modelo.*;
-import rh.servico.FeriasServico;
 
 /** TELA 3 - Férias. ACÇÃO 2: Solicitar férias (valida o limite de dias úteis). */
 public class FeriasFrame extends TelaBase {
     private final JComboBox<Funcionario> cbFunc = new JComboBox<>();
+    private final JSpinner spAno = new JSpinner(new SpinnerNumberModel(LocalDate.now().getYear(), 2000, 2100, 1));
+    private final JLabel lbSaldo = new JLabel(" ");
     private final JTextField tfInicio = new JTextField(LocalDate.now().toString(), 10);
     private final JTextField tfFim = new JTextField(LocalDate.now().plusDays(7).toString(), 10);
     private final DefaultTableModel modelo = Ui.modeloTabela(
-            "ID", "Funcionário", "Início", "Fim", "Dias úteis", "Estado");
+            "ID", "Funcionário", "Início", "Fim", "Dias de gozo", "Ano ref.", "Estado");
     private final JTable tabela = new JTable(modelo);
 
     public FeriasFrame(Navegador nav) {
@@ -34,8 +35,8 @@ public class FeriasFrame extends TelaBase {
         Ui.linha(form, 0, new JLabel("Funcionário:"), cbFunc);
         Ui.linha(form, 1, new JLabel("Início (AAAA-MM-DD):"), tfInicio);
         Ui.linha(form, 2, new JLabel("Fim (AAAA-MM-DD):"), tfFim);
-        Ui.linha(form, 3, new JLabel("Limite anual:"),
-                new JLabel(FeriasServico.LIMITE_DIAS_UTEIS_ANO + " dias úteis"));
+        Ui.linha(form, 3, new JLabel("Ano de referência:"), spAno);
+        Ui.linha(form, 4, new JLabel("Direito e saldo:"), lbSaldo);
 
         JButton bSolicitar = new JButton("Solicitar");
         bSolicitar.addActionListener(e -> solicitar());
@@ -69,8 +70,10 @@ public class FeriasFrame extends TelaBase {
         add(sul, BorderLayout.SOUTH);
 
 
+        cbFunc.addActionListener(e -> mostrarSaldo());
+        spAno.addChangeListener(e -> mostrarSaldo());
         atualizar();
-        dimensionar(620, 450);
+        dimensionar(760, 500);
     }
 
     /** Executa uma acção sobre o pedido seleccionado e recarrega a tabela. */
@@ -85,6 +88,18 @@ public class FeriasFrame extends TelaBase {
         }
     }
 
+    /** Mostra o direito a férias e o saldo do funcionário escolhido no ano de referência. */
+    private void mostrarSaldo() {
+        Funcionario f = (Funcionario) cbFunc.getSelectedItem();
+        if (f == null) { lbSaldo.setText(" "); return; }
+        try {
+            var s = app.ferias.saldo(f.getId(), (Integer) spAno.getValue());
+            lbSaldo.setText(s.direito() + " dias - " + s.usados() + " usados/pedidos = " + s.disponivel() + " disponíveis");
+        } catch (IllegalArgumentException | RhException ex) {
+            lbSaldo.setText(ex.getMessage());
+        }
+    }
+
     private void solicitar() {
         try {
             Funcionario f = (Funcionario) cbFunc.getSelectedItem();
@@ -92,10 +107,10 @@ public class FeriasFrame extends TelaBase {
             LocalDate inicio = LocalDate.parse(tfInicio.getText().trim());
             LocalDate fim = LocalDate.parse(tfFim.getText().trim());
 
-            Ferias pedido = app.ferias.solicitar(f.getId(), inicio, fim);
+            Ferias pedido = app.ferias.solicitar(f.getId(), inicio, fim, (Integer) spAno.getValue());
             atualizar();
-            Ui.info(this, "Pedido #" + pedido.getId() + " registado (" + pedido.diasUteis()
-                    + " dias úteis). Estado: " + pedido.getEstado() + ".");
+            Ui.info(this, "Pedido #" + pedido.getId() + " registado (" + pedido.getDiasGozo()
+                    + " dias de gozo, feriados excluídos). Estado: " + pedido.getEstado() + ".");
         } catch (DateTimeParseException ex) {
             Ui.erro(this, "Data inválida. Use o formato AAAA-MM-DD, por exemplo 2026-12-15.");
         } catch (IllegalArgumentException | RhException ex) {
@@ -109,11 +124,12 @@ public class FeriasFrame extends TelaBase {
         cbFunc.removeAllItems();
         app.funcionarios.listarActivos().forEach(cbFunc::addItem);
         if (seleccionado != null) cbFunc.setSelectedItem(seleccionado);
+        mostrarSaldo();
 
         modelo.setRowCount(0);
         for (Ferias fe : app.ferias.listar()) {
             modelo.addRow(new Object[]{fe.getId(), app.funcionarios.nome(fe.getFuncionarioId()),
-                    fe.getInicio(), fe.getFim(), fe.diasUteis(), fe.getEstado()});
+                    fe.getInicio(), fe.getFim(), fe.getDiasGozo(), fe.getAnoReferencia(), fe.getEstado()});
         }
     }
 }

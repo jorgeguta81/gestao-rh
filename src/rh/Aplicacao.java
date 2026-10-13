@@ -14,6 +14,7 @@ import rh.servico.*;
 public final class Aplicacao {
     public final Sessao sessao = new Sessao();
     public final UtilizadorControlador utilizadores;
+    public final DefinicoesControlador definicoes;
     public final DepartamentoControlador departamentos;
     public final FuncionarioControlador funcionarios;
     public final FeriasControlador ferias;
@@ -30,8 +31,9 @@ public final class Aplicacao {
         Repositorio<Ferias> feriasRepo = new RepositorioFicheiro<>(pasta.resolve("ferias.dat"));
         Repositorio<Utilizador> utilRepo = new RepositorioFicheiro<>(pasta.resolve("utilizadores.dat"));
 
+        DefinicoesServico defServ = new DefinicoesServico(pasta.resolve("definicoes.properties"));
         DepartamentoServico depServ = new DepartamentoServico(depRepo, funcRepo);
-        FuncionarioServico funcServ = new FuncionarioServico(funcRepo, feriasRepo);
+        FuncionarioServico funcServ = new FuncionarioServico(funcRepo, feriasRepo, depRepo, defServ);
         FeriasServico feriasServ = new FeriasServico(feriasRepo, funcRepo);
         FolhaSalarioServico folhaServ = new FolhaSalarioServico(funcRepo);
         UtilizadorServico utilServ = new UtilizadorServico(utilRepo, funcRepo);
@@ -41,6 +43,7 @@ public final class Aplicacao {
         ferias = new FeriasControlador(feriasServ, sessao);
         folha = new FolhaControlador(folhaServ, sessao);
         utilizadores = new UtilizadorControlador(utilServ, sessao);
+        definicoes = new DefinicoesControlador(defServ, sessao);
 
         // Dados de exemplo só na primeira execução (quando ainda não há nada gravado)
         boolean primeiraVez = depServ.listar().isEmpty() && funcServ.listar().isEmpty();
@@ -51,14 +54,20 @@ public final class Aplicacao {
     private static void semear(DepartamentoServico dep, FuncionarioServico func) {
         dep.criar(new Departamento("Recursos Humanos", "Gestão de pessoal"));
         dep.criar(new Departamento("Financeiro", "Contabilidade e tesouraria"));
-        func.admitir(new Gestor("Ana Macuácua", "110100000001A", "ana@empresa.co.mz", "841111111",
-                "Directora RH", 1, LocalDate.of(2020, 3, 1), 60000, 5000, 10000));
-        func.admitir(new FuncionarioEfetivo("Carlos Sitoe", "110100000002B", "carlos@empresa.co.mz", "842222222",
-                "Contabilista", 2, LocalDate.of(2022, 6, 15), 35000, 3000));
-        func.admitir(new FuncionarioContratado("Marta Langa", "110100000003C", "marta@empresa.co.mz", "843333333",
-                "Consultora", 1, LocalDate.of(2024, 1, 10), 500, 120));
-        func.admitir(new Estagiario("João Cossa", "110100000004D", "joao@empresa.co.mz", "844444444",
-                "Estagiário", 2, LocalDate.of(2025, 2, 3), 8000));
+        func.admitir(pessoa(new Gestor("Ana Macuácua", "110100000001A", "ana@empresa.co.mz", "841111111",
+                "Directora RH", 1, LocalDate.of(2020, 3, 1), 60000, 5000, 10000), "400000001", LocalDate.of(1985, 4, 12)));
+        func.admitir(pessoa(new FuncionarioEfetivo("Carlos Sitoe", "110100000002B", "carlos@empresa.co.mz", "842222222",
+                "Contabilista", 2, LocalDate.of(2022, 6, 15), 35000, 3000), "400000002", LocalDate.of(1990, 9, 3)));
+        func.admitir(pessoa(new FuncionarioContratado("Marta Langa", "110100000003C", "marta@empresa.co.mz", "843333333",
+                "Consultora", 1, LocalDate.of(2024, 1, 10), 500, 120), "400000003", LocalDate.of(1992, 1, 25)));
+        func.admitir(pessoa(new Estagiario("João Cossa", "110100000004D", "joao@empresa.co.mz", "844444444",
+                "Estagiário", 2, LocalDate.of(2025, 2, 3), 8000), "400000004", LocalDate.of(2001, 11, 30)));
+    }
+
+    private static Funcionario pessoa(Funcionario f, String nuit, LocalDate nascimento) {
+        f.setNuit(nuit);
+        f.setDataNascimento(nascimento);
+        return f;
     }
 
     /**

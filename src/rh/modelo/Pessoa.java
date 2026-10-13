@@ -9,6 +9,8 @@ public abstract class Pessoa implements Identificavel {
     private String bi;
     private String email;
     private String telefone;
+    private String nuit;
+    private java.time.LocalDate dataNascimento;
 
     protected Pessoa(String nome, String bi, String email, String telefone) {
         this.nome = nome;
@@ -27,6 +29,12 @@ public abstract class Pessoa implements Identificavel {
     public void setEmail(String email) { this.email = email; }
     public String getTelefone() { return telefone; }
     public void setTelefone(String telefone) { this.telefone = telefone; }
+
+    /** Número Único de Identificação Tributária (9 dígitos). */
+    public String getNuit() { return nuit; }
+    public void setNuit(String nuit) { this.nuit = nuit; }
+    public java.time.LocalDate getDataNascimento() { return dataNascimento; }
+    public void setDataNascimento(java.time.LocalDate d) { this.dataNascimento = d; }
 
     public abstract String getTipo();
 

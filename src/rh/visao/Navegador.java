@@ -80,6 +80,9 @@ public final class Navegador {
             JOptionPane.showMessageDialog(pai, "Palavra-passe alterada.");
     }
 
+    /** Definições da empresa (só Administrador). */
+    void definicoes(JFrame pai) { DefinicoesDialogo.mostrar(pai, app); }
+
     private JFrame criar(Tela tela) {
         return switch (tela) {
             case LOGIN -> new LoginFrame(this);

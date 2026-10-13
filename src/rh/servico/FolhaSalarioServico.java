@@ -8,7 +8,11 @@ import rh.repositorio.Repositorio;
 public class FolhaSalarioServico {
 
     /** Uma linha da folha. */
-    public record LinhaFolha(int id, String nome, String tipo, double bruto, double inss, double liquido) {}
+    public record LinhaFolha(int id, String nome, String tipo, double bruto, double inss, double irps,
+                             double liquido, double inssPatronal) {
+        /** Custo total para a empresa: bruto + INSS patronal. */
+        public double custoEmpresa() { return bruto + inssPatronal; }
+    }
 
     private final Repositorio<Funcionario> repo;
 
@@ -19,7 +23,8 @@ public class FolhaSalarioServico {
         return repo.listarTodos().stream()
                 .filter(Funcionario::isAtivo)
                 .map(f -> new LinhaFolha(f.getId(), f.getNome(), f.getTipo(),
-                        f.calcularSalarioBruto(), f.calcularInss(), f.calcularSalarioLiquido()))
+                        f.calcularSalarioBruto(), f.calcularInss(), f.calcularIrps(),
+                        f.calcularSalarioLiquido(), f.calcularInssPatronal()))
                 .toList();
     }
 }

@@ -1,6 +1,5 @@
 package rh.modelo;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 
 public class Ferias implements Identificavel {
@@ -11,11 +10,19 @@ public class Ferias implements Identificavel {
     private LocalDate inicio;
     private LocalDate fim;
     private EstadoFerias estado = EstadoFerias.PENDENTE;
+    private final int anoReferencia;
+    private final int diasGozo;
 
-    public Ferias(int funcionarioId, LocalDate inicio, LocalDate fim) {
+    /**
+     * @param anoReferencia ano a que o direito a férias se refere (pode gozar-se no próprio ano ou no seguinte)
+     * @param diasGozo dias de calendário do período, sem os feriados (Lei 13/2023, art. 108.º e 111.º)
+     */
+    public Ferias(int funcionarioId, LocalDate inicio, LocalDate fim, int anoReferencia, int diasGozo) {
         this.funcionarioId = funcionarioId;
         this.inicio = inicio;
         this.fim = fim;
+        this.anoReferencia = anoReferencia;
+        this.diasGozo = diasGozo;
     }
 
     @Override public int getId() { return id; }
@@ -26,19 +33,14 @@ public class Ferias implements Identificavel {
     public EstadoFerias getEstado() { return estado; }
     public void setEstado(EstadoFerias estado) { this.estado = estado; }
 
-    /** Dias úteis (seg-sex) entre início e fim, inclusive. */
-    public int diasUteis() {
-        int dias = 0;
-        for (LocalDate d = inicio; !d.isAfter(fim); d = d.plusDays(1)) {
-            DayOfWeek dow = d.getDayOfWeek();
-            if (dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY) dias++;
-        }
-        return dias;
-    }
+    public int getAnoReferencia() { return anoReferencia; }
+
+    /** Dias que contam para o direito a férias (dias de calendário menos feriados). */
+    public int getDiasGozo() { return diasGozo; }
 
     @Override
     public String toString() {
-        return String.format("#%d | Func: %d | %s a %s | %d dias úteis | %s",
-                id, funcionarioId, inicio, fim, diasUteis(), estado);
+        return String.format("#%d | Func: %d | %s a %s | %d dias | %s",
+                id, funcionarioId, inicio, fim, diasGozo, estado);
     }
 }

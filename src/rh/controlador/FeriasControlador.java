@@ -18,11 +18,19 @@ public class FeriasControlador {
     }
 
     /** RH/Admin registam para qualquer funcionário; os restantes só para si. */
-    public Ferias solicitar(int funcionarioId, LocalDate inicio, LocalDate fim) {
+    public Ferias solicitar(int funcionarioId, LocalDate inicio, LocalDate fim, int anoReferencia) {
         sessao.exigir(Permissao.FERIAS_SOLICITAR);
         if (!sessao.tem(Permissao.FERIAS_DECIDIR) && funcionarioId != sessao.funcionarioId())
             throw new AcessoNegadoException("Só pode solicitar férias para si próprio.");
-        return servico.solicitar(funcionarioId, inicio, fim);
+        return servico.solicitar(funcionarioId, inicio, fim, anoReferencia);
+    }
+
+    /** Direito e saldo de férias de um funcionário (o próprio, ou qualquer um para RH/Admin). */
+    public FeriasServico.Saldo saldo(int funcionarioId, int ano) {
+        sessao.exigirAutenticado();
+        if (!sessao.tem(Permissao.FERIAS_DECIDIR) && funcionarioId != sessao.funcionarioId())
+            throw new AcessoNegadoException("Só pode consultar o seu próprio saldo de férias.");
+        return servico.saldo(funcionarioId, ano);
     }
 
     /** Quem decide não pode decidir o seu próprio pedido (separação de funções). */
