@@ -2,6 +2,7 @@ package rh.servico;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import rh.config.ParametrosLegais;
@@ -10,6 +11,7 @@ import rh.excecao.RegraNegocioException;
 import rh.excecao.ValidacaoException;
 import rh.modelo.*;
 import rh.repositorio.Repositorio;
+import rh.util.Texto;
 
 /**
  * Regras de férias da Lei do Trabalho (Lei n.º 13/2023):
@@ -96,6 +98,25 @@ public class FeriasServico {
     }
 
     public List<Ferias> listar() { return repo.listarTodos(); }
+
+    /** Pesquisa com filtros e ordenação (ver {@link CriterioFerias}). */
+    public List<Ferias> pesquisar(CriterioFerias c) {
+        Comparator<Ferias> ordem = switch (c.ordenarPor()) {
+            case INICIO -> Comparator.comparing(Ferias::getInicio);
+            case FUNCIONARIO -> Comparator.comparing(f -> Texto.normalizar(nomeFuncionario(f.getFuncionarioId())));
+            case ESTADO -> Comparator.comparing(Ferias::getEstado);
+            case DIAS -> Comparator.comparingInt(Ferias::getDiasGozo);
+        };
+        if (!c.ascendente()) ordem = ordem.reversed();
+        return repo.listarTodos().stream()
+                .filter(f -> c.estado() == null || f.getEstado() == c.estado())
+                .filter(f -> c.ano() == null || f.getInicio().getYear() == c.ano())
+                .filter(f -> Texto.contemTodas(nomeFuncionario(f.getFuncionarioId()), c.texto()))
+                .sorted(ordem)
+                .toList();
+    }
+
+    private String nomeFuncionario(int id) { return funcionarios.buscarPorId(id).map(Funcionario::getNome).orElse(""); }
     public Optional<Ferias> buscar(int id) { return repo.buscarPorId(id); }
 
     /** Só se cancelam pedidos pendentes, ou aprovados que ainda não começaram. */

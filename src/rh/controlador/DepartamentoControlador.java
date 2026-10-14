@@ -17,6 +17,8 @@ public class DepartamentoControlador {
 
     public List<Departamento> listar() { sessao.exigir(Permissao.DEPARTAMENTOS_VER); return servico.listar(); }
 
+    public List<Departamento> pesquisar(String texto) { sessao.exigir(Permissao.DEPARTAMENTOS_VER); return servico.pesquisar(texto); }
+
     public Departamento criar(String nome, String descricao) {
         sessao.exigir(Permissao.DEPARTAMENTOS_EDITAR);
         Departamento d = servico.criar(new Departamento(nome, descricao));

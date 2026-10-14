@@ -3,10 +3,12 @@ package rh.visao;
 import java.awt.*;
 import java.time.LocalDate;
 import javax.swing.*;
+import java.util.List;
 import javax.swing.table.DefaultTableModel;
 import rh.excecao.RecursoNaoEncontradoException;
 import rh.excecao.ValidacaoException;
 import rh.modelo.*;
+import rh.servico.CriterioFuncionario;
 import rh.servico.DadosFuncionario;
 
 /** TELA - Funcionários: listar, admitir, editar, demitir/reactivar e remover. */
@@ -20,8 +22,16 @@ public class FuncionariosFrame extends TelaBase {
     private final JLabel lbV1 = new JLabel(), lbV2 = new JLabel(), lbV3 = new JLabel();
     private final JComboBox<Departamento> cbDep = new JComboBox<>();
     private final DefaultTableModel modelo = Ui.modeloTabela(
-            "ID", "Tipo", "Nome", "BI", "Cargo", "Departamento", "Estado", "Salário bruto");
-    private final JTable tabela = new JTable(modelo);
+            "ID", "Tipo", "Nome", "BI", "Cargo", "Departamento", "Admissão", "Estado", "Salário bruto (MT)");
+    private final JTable tabela = Ui.configurar(new JTable(modelo));
+    // pesquisa, filtros e ordenação
+    private final JTextField tfBusca = new JTextField(16);
+    private final JComboBox<Object> cbFiltroTipo = new JComboBox<>();
+    private final JComboBox<Object> cbFiltroDep = new JComboBox<>();
+    private final JComboBox<CriterioFuncionario.Estado> cbFiltroEstado = new JComboBox<>(CriterioFuncionario.Estado.values());
+    private final JComboBox<CriterioFuncionario.Campo> cbOrdem = new JComboBox<>(CriterioFuncionario.Campo.values());
+    private final JCheckBox ckDesc = new JCheckBox("Decrescente");
+    private final JLabel lbContagem = new JLabel(" ");
     private final JButton bGravar = new JButton("Admitir");
     private final JButton bEstado = new JButton("Demitir");
     private final JButton bRemover = new JButton("Remover");
@@ -72,20 +82,40 @@ public class FuncionariosFrame extends TelaBase {
         esquerda.add(botoes, BorderLayout.CENTER);
 
         tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        Ui.larguras(tabela, 40, 80, 150, 120, 120, 120, 70, 100);
+        Ui.larguras(tabela, 40, 80, 150, 120, 110, 120, 85, 70, 110);
         tabela.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && !aCarregar) aoSeleccionar();
         });
 
         add(esquerda, BorderLayout.WEST);
-        add(new JScrollPane(tabela), BorderLayout.CENTER);
+        cbFiltroTipo.addItem("Todos os tipos");
+        for (TipoFuncionario t : TipoFuncionario.values()) cbFiltroTipo.addItem(t);
+        cbFiltroDep.setRenderer(Ui.rendererDepartamento());
+        JButton bLimpar = new JButton("Limpar filtros");
+        bLimpar.addActionListener(e -> limparFiltros());
+        Runnable refiltrar = () -> { if (!aCarregar) atualizar(); };
+        Ui.aoEscrever(tfBusca, refiltrar);
+        for (JComboBox<?> c : List.of(cbFiltroTipo, cbFiltroDep, cbFiltroEstado)) c.addActionListener(e -> refiltrar.run());
+        // mudar o campo de ordenação anula a ordenação feita no cabeçalho, para a escolha valer
+        cbOrdem.addActionListener(e -> { if (!aCarregar) { tabela.getRowSorter().setSortKeys(null); atualizar(); } });
+        ckDesc.addActionListener(e -> { if (!aCarregar) { tabela.getRowSorter().setSortKeys(null); atualizar(); } });
+
+        JPanel filtros = Ui.painelFiltros("Pesquisar, filtrar e ordenar",
+                new JComponent[]{new JLabel("Procurar:"), tfBusca, cbFiltroTipo, cbFiltroDep, cbFiltroEstado},
+                new JComponent[]{new JLabel("Ordenar por:"), cbOrdem, ckDesc, bLimpar, lbContagem});
+        tfBusca.setToolTipText("Nome, BI, NUIT, cargo, email ou telefone (sem acentos; várias palavras)");
+
+        JPanel centro = new JPanel(new BorderLayout());
+        centro.add(filtros, BorderLayout.NORTH);
+        centro.add(new JScrollPane(tabela), BorderLayout.CENTER);
+        add(centro, BorderLayout.CENTER);
         add(rodapeVoltar(), BorderLayout.SOUTH);
 
         cbTipo.addActionListener(e -> ajustarCampos());
         ajustarCampos();
         atualizar();
         novo();
-        dimensionar(1080, 620);
+        dimensionar(1280, 640);
     }
 
     /** Mostra só os campos de valores que fazem sentido para o tipo escolhido. */
@@ -201,21 +231,55 @@ public class FuncionariosFrame extends TelaBase {
         if (!edicao) bEstado.setText("Demitir");
     }
 
+    private void limparFiltros() {
+        aCarregar = true;
+        tfBusca.setText("");
+        cbFiltroTipo.setSelectedIndex(0);
+        cbFiltroDep.setSelectedIndex(0);
+        cbFiltroEstado.setSelectedIndex(0);
+        cbOrdem.setSelectedItem(CriterioFuncionario.Campo.NOME);
+        ckDesc.setSelected(false);
+        aCarregar = false;
+        tabela.getRowSorter().setSortKeys(null);
+        atualizar();
+    }
+
+    private CriterioFuncionario criterio() {
+        Object tipo = cbFiltroTipo.getSelectedItem();
+        Object dep = cbFiltroDep.getSelectedItem();
+        return new CriterioFuncionario(tfBusca.getText(),
+                tipo instanceof TipoFuncionario t ? t : null,
+                dep instanceof Departamento d ? d.getId() : 0,
+                (CriterioFuncionario.Estado) cbFiltroEstado.getSelectedItem(),
+                (CriterioFuncionario.Campo) cbOrdem.getSelectedItem(), !ckDesc.isSelected());
+    }
+
     @Override
     protected void atualizar() {
         aCarregar = true;
         try {
+            var departamentos = app.departamentos.listar();
             Object dep = cbDep.getSelectedItem();
             cbDep.removeAllItems();
-            app.departamentos.listar().forEach(cbDep::addItem);
+            departamentos.forEach(cbDep::addItem);
             if (dep != null) cbDep.setSelectedItem(dep);
 
-            modelo.setRowCount(0);
-            for (Funcionario f : app.funcionarios.listar()) {
-                modelo.addRow(new Object[]{f.getId(), f.getTipo(), f.getNome(), f.getBi(), f.getCargo(),
-                        app.departamentos.nome(f.getDepartamentoId()),
-                        f.isAtivo() ? "Activo" : "Inactivo", Ui.dinheiro(f.calcularSalarioBruto())});
+            Object filtroDep = cbFiltroDep.getSelectedItem();
+            cbFiltroDep.removeAllItems();
+            cbFiltroDep.addItem("Todos os departamentos");
+            departamentos.forEach(cbFiltroDep::addItem);
+            if (filtroDep instanceof Departamento d) {
+                for (Departamento x : departamentos) if (x.getId() == d.getId()) cbFiltroDep.setSelectedItem(x);
             }
+
+            modelo.setRowCount(0);
+            var lista = app.funcionarios.pesquisar(criterio());
+            for (Funcionario f : lista) {
+                modelo.addRow(new Object[]{f.getId(), f.getTipo(), f.getNome(), f.getBi(), f.getCargo(),
+                        app.departamentos.nome(f.getDepartamentoId()), f.getDataAdmissao(),
+                        f.isAtivo() ? "Activo" : "Inactivo", f.calcularSalarioBruto()});
+            }
+            lbContagem.setText(lista.size() + " resultado(s)");
             if (editandoId >= 0) Ui.seleccionar(tabela, editandoId);
         } finally {
             aCarregar = false;

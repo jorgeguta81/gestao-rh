@@ -7,7 +7,9 @@ import rh.config.ParametrosLegais;
 import rh.config.SectorActividade;
 import rh.excecao.*;
 import rh.modelo.*;
-import rh.servico.DadosFuncionario;
+import rh.servico.*;
+import rh.servico.CriterioFuncionario.Campo;
+import rh.servico.CriterioFuncionario.Estado;
 
 /**
  * Testes automáticos sem bibliotecas externas.
@@ -58,6 +60,7 @@ public class TestesRh {
         impostos();
         ferias();
         acesso();
+        pesquisa();
         excepcoes();
         System.out.println("\n" + (feitos - falhados) + "/" + feitos + " verificações OK");
         System.exit(falhados == 0 ? 0 : 1);
@@ -271,6 +274,61 @@ public class TestesRh {
 
         Aplicacao app2 = new Aplicacao(Path.of(System.getProperty("java.io.tmpdir")).resolve("inexistente-" + System.nanoTime()));
         ok(app2.utilizadores.login("admin", "Admin@123") != null, "(nova instalação) conta admin criada");
+    }
+
+    // ------------------------------------------------------------------ pesquisa
+    private static String nomes(List<Funcionario> l) { return l.stream().map(f -> f.getNome().split(" ")[0]).collect(java.util.stream.Collectors.joining(",")); }
+    private static CriterioFuncionario crit(String t, TipoFuncionario tipo, int dep, Estado e, Campo c, boolean asc) { return new CriterioFuncionario(t, tipo, dep, e, c, asc); }
+
+    static void pesquisa() throws Exception {
+        seccao("Pesquisa, filtros e ordenação");
+        Aplicacao app = nova();
+        var todos = CriterioFuncionario.todos();
+        ok(nomes(app.funcionarios.pesquisar(todos)).equals("Ana,Carlos,João,Marta"), "por omissão: todos, por nome");
+        ok(nomes(app.funcionarios.pesquisar(crit("macuacua", null, 0, Estado.TODOS, Campo.NOME, true))).equals("Ana"), "pesquisa ignora acentos e maiúsculas (macuacua -> Macuácua)");
+        ok(nomes(app.funcionarios.pesquisar(crit("SITOE contab", null, 0, Estado.TODOS, Campo.NOME, true))).equals("Carlos"), "várias palavras em campos diferentes (nome + cargo)");
+        ok(app.funcionarios.pesquisar(crit("ana carlos", null, 0, Estado.TODOS, Campo.NOME, true)).isEmpty(), "todas as palavras têm de coincidir na mesma pessoa");
+        ok(nomes(app.funcionarios.pesquisar(crit("400000003", null, 0, Estado.TODOS, Campo.NOME, true))).equals("Marta"), "pesquisa por NUIT");
+        ok(nomes(app.funcionarios.pesquisar(crit("", TipoFuncionario.ESTAGIARIO, 0, Estado.TODOS, Campo.NOME, true))).equals("João"), "filtro por tipo");
+        ok(nomes(app.funcionarios.pesquisar(crit("", null, 1, Estado.TODOS, Campo.NOME, true))).equals("Ana,Marta"), "filtro por departamento");
+        ok(nomes(app.funcionarios.pesquisar(crit("", TipoFuncionario.GESTOR, 2, Estado.TODOS, Campo.NOME, true))).isEmpty(), "filtros combinados (gestor no Financeiro: nenhum)");
+        ok(nomes(app.funcionarios.pesquisar(crit("", null, 0, Estado.TODOS, Campo.SALARIO, true))).equals("João,Carlos,Marta,Ana"), "ordenar por salário crescente");
+        ok(nomes(app.funcionarios.pesquisar(crit("", null, 0, Estado.TODOS, Campo.SALARIO, false))).equals("Ana,Marta,Carlos,João"), "ordenar por salário decrescente");
+        ok(nomes(app.funcionarios.pesquisar(crit("", null, 0, Estado.TODOS, Campo.ADMISSAO, true))).equals("Ana,Carlos,Marta,João"), "ordenar por data de admissão");
+        ok(nomes(app.funcionarios.pesquisar(crit("", null, 0, Estado.TODOS, Campo.DEPARTAMENTO, true))).equals("Carlos,João,Ana,Marta"), "ordenar por departamento (Financeiro antes de RH)");
+        ok(nomes(app.funcionarios.pesquisar(crit("", null, 0, Estado.TODOS, Campo.ID, false))).equals("João,Marta,Carlos,Ana"), "ordenar por ID decrescente");
+        app.funcionarios.demitir(4);
+        ok(nomes(app.funcionarios.pesquisar(crit("", null, 0, Estado.INACTIVOS, Campo.NOME, true))).equals("João"), "filtro: inactivos");
+        ok(app.funcionarios.pesquisar(crit("", null, 0, Estado.ACTIVOS, Campo.NOME, true)).size() == 3, "filtro: activos");
+
+        // férias
+        app.ferias.solicitar(2, LocalDate.of(2026, 11, 2), LocalDate.of(2026, 11, 15), 2026);
+        app.ferias.solicitar(1, LocalDate.of(2026, 3, 2), LocalDate.of(2026, 3, 11), 2026);
+        app.ferias.solicitar(3, LocalDate.of(2027, 1, 12), LocalDate.of(2027, 1, 23), 2027);
+        int pedidoAna = app.ferias.listar().stream().filter(f -> f.getFuncionarioId() == 1).findFirst().get().getId();
+        app.ferias.decidir(pedidoAna, true);
+        var fr = new CriterioFerias("", null, null, CriterioFerias.Campo.INICIO, true);
+        ok(app.ferias.pesquisar(fr).stream().map(f -> f.getFuncionarioId()).toList().equals(List.of(1, 2, 3)), "férias por data de início crescente");
+        ok(app.ferias.pesquisar(new CriterioFerias("", null, null, CriterioFerias.Campo.INICIO, false)).get(0).getFuncionarioId() == 3, "férias por data de início decrescente");
+        ok(app.ferias.pesquisar(new CriterioFerias("carlos", null, null, CriterioFerias.Campo.INICIO, true)).size() == 1, "férias: pesquisa por nome");
+        ok(app.ferias.pesquisar(new CriterioFerias("", EstadoFerias.APROVADA, null, CriterioFerias.Campo.INICIO, true)).size() == 1, "férias: filtro por estado");
+        ok(app.ferias.pesquisar(new CriterioFerias("", null, 2027, CriterioFerias.Campo.INICIO, true)).size() == 1, "férias: filtro por ano");
+        ok(app.ferias.pesquisar(new CriterioFerias("", null, null, CriterioFerias.Campo.DIAS, false)).get(0).getDiasGozo() == 14, "férias: ordenar por dias (mais longo primeiro)");
+
+        // folha, departamentos, utilizadores
+        ok(app.folha.linhas("", TipoFuncionario.EFECTIVO).size() == 1 && app.folha.linhas("marta", null).size() == 1, "folha: filtro por tipo e nome");
+        ok(app.folha.linhas().stream().noneMatch(l -> l.nome().startsWith("João")), "folha: inactivos não aparecem");
+        ok(app.departamentos.pesquisar("FINANC").size() == 1 && app.departamentos.pesquisar("").size() == 2, "departamentos: pesquisa");
+        ok(app.utilizadores.pesquisar("", Perfil.GESTOR_RH).size() == 1 && app.utilizadores.pesquisar("ADM", null).size() == 1, "utilizadores: pesquisa e filtro por perfil");
+
+        // o perfil limita também as pesquisas
+        app.utilizadores.terminarSessao();
+        app.utilizadores.login("carlos", "Func@1234");
+        ok(app.ferias.pesquisar(CriterioFerias.todas()).stream().allMatch(f -> f.getFuncionarioId() == 2) && app.ferias.pesquisar(CriterioFerias.todas()).size() == 1,
+                "funcionário só encontra os seus pedidos");
+        ok(app.ferias.pesquisar(new CriterioFerias("ana", null, null, CriterioFerias.Campo.INICIO, true)).isEmpty(), "funcionário não encontra pedidos de colegas pesquisando o nome");
+        lanca(AcessoNegadoException.class, null, () -> app.funcionarios.pesquisar(todos), "funcionário não pesquisa funcionários");
+        ok(app.folha.linhas("ana", null).isEmpty() && app.folha.linhas("", null).size() == 1, "funcionário só encontra o seu recibo");
     }
 
     // ------------------------------------------------------------------ excepções

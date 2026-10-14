@@ -8,6 +8,7 @@ import rh.excecao.ValidacaoException;
 import rh.modelo.Departamento;
 import rh.modelo.Funcionario;
 import rh.repositorio.Repositorio;
+import rh.util.Texto;
 
 /** Regras de negócio dos departamentos. */
 public class DepartamentoServico {
@@ -40,6 +41,14 @@ public class DepartamentoServico {
         if (n > 0) throw new RegraNegocioException(
                 "O departamento ainda tem " + n + " funcionário(s). Transfira-os antes de o remover.");
         repo.remover(id);
+    }
+
+    /** Procura pelo nome ou descrição (sem acentos nem maiúsculas), ordenado por nome. */
+    public List<Departamento> pesquisar(String texto) {
+        return repo.listarTodos().stream()
+                .filter(d -> Texto.contemTodas(d.getNome() + " " + d.getDescricao(), texto))
+                .sorted(java.util.Comparator.comparing(d -> Texto.normalizar(d.getNome())))
+                .toList();
     }
 
     public Optional<Departamento> buscar(int id) { return repo.buscarPorId(id); }

@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import rh.excecao.RhException;
+import rh.servico.CriterioFerias;
 import rh.excecao.ValidacaoException;
 import rh.modelo.*;
 
@@ -17,7 +18,14 @@ public class FeriasFrame extends TelaBase {
     private final JTextField tfFim = new JTextField(LocalDate.now().plusDays(7).toString(), 10);
     private final DefaultTableModel modelo = Ui.modeloTabela(
             "ID", "Funcionário", "Início", "Fim", "Dias de gozo", "Ano ref.", "Estado");
-    private final JTable tabela = new JTable(modelo);
+    private final JTable tabela = Ui.configurar(new JTable(modelo));
+    // pesquisa, filtros e ordenação
+    private final JTextField tfBusca = new JTextField(14);
+    private final JComboBox<Object> cbFiltroEstado = new JComboBox<>();
+    private final JComboBox<Object> cbFiltroAno = new JComboBox<>();
+    private final JComboBox<CriterioFerias.Campo> cbOrdem = new JComboBox<>(CriterioFerias.Campo.values());
+    private final JCheckBox ckDesc = new JCheckBox("Decrescente", true);
+    private final JLabel lbContagem = new JLabel(" ");
 
     public FeriasFrame(Navegador nav) {
         super("Férias", nav);
@@ -67,14 +75,40 @@ public class FeriasFrame extends TelaBase {
 
         add(topo, BorderLayout.NORTH);
         tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        add(new JScrollPane(tabela), BorderLayout.CENTER);
+        cbFiltroEstado.addItem("Todos os estados");
+        for (EstadoFerias e : EstadoFerias.values()) cbFiltroEstado.addItem(e);
+        cbFiltroAno.addItem("Todos os anos");
+        for (int a = LocalDate.now().getYear() + 1; a >= LocalDate.now().getYear() - 3; a--) cbFiltroAno.addItem(a);
+        Runnable refiltrar = this::atualizar;
+        Ui.aoEscrever(tfBusca, refiltrar);
+        cbFiltroEstado.addActionListener(e -> refiltrar.run());
+        cbFiltroAno.addActionListener(e -> refiltrar.run());
+        cbOrdem.addActionListener(e -> { tabela.getRowSorter().setSortKeys(null); refiltrar.run(); });
+        ckDesc.addActionListener(e -> { tabela.getRowSorter().setSortKeys(null); refiltrar.run(); });
+        JButton bLimpar = new JButton("Limpar filtros");
+        bLimpar.addActionListener(e -> {
+            tfBusca.setText(""); cbFiltroEstado.setSelectedIndex(0); cbFiltroAno.setSelectedIndex(0);
+            cbOrdem.setSelectedItem(CriterioFerias.Campo.INICIO); ckDesc.setSelected(true);
+            tabela.getRowSorter().setSortKeys(null);
+            atualizar();
+        });
+        boolean vePorNome = app.sessao.tem(Permissao.FERIAS_VER_TODAS);
+        JPanel filtros = Ui.painelFiltros("Pesquisar, filtrar e ordenar",
+                vePorNome ? new JComponent[]{new JLabel("Funcionário:"), tfBusca, cbFiltroEstado, cbFiltroAno}
+                          : new JComponent[]{cbFiltroEstado, cbFiltroAno},
+                new JComponent[]{new JLabel("Ordenar por:"), cbOrdem, ckDesc, bLimpar, lbContagem});
+
+        JPanel centro = new JPanel(new BorderLayout());
+        centro.add(filtros, BorderLayout.NORTH);
+        centro.add(new JScrollPane(tabela), BorderLayout.CENTER);
+        add(centro, BorderLayout.CENTER);
         add(sul, BorderLayout.SOUTH);
 
 
         cbFunc.addActionListener(e -> mostrarSaldo());
         spAno.addChangeListener(e -> mostrarSaldo());
         atualizar();
-        dimensionar(760, 500);
+        dimensionar(900, 560);
     }
 
     /** Executa uma acção sobre o pedido seleccionado e recarrega a tabela. */
@@ -122,7 +156,12 @@ public class FeriasFrame extends TelaBase {
         mostrarSaldo();
 
         modelo.setRowCount(0);
-        for (Ferias fe : app.ferias.listar()) {
+        Object estado = cbFiltroEstado.getSelectedItem(), ano = cbFiltroAno.getSelectedItem();
+        var lista = app.ferias.pesquisar(new CriterioFerias(tfBusca.getText(),
+                estado instanceof EstadoFerias e ? e : null, ano instanceof Integer a ? a : null,
+                (CriterioFerias.Campo) cbOrdem.getSelectedItem(), !ckDesc.isSelected()));
+        lbContagem.setText(lista.size() + " pedido(s)");
+        for (Ferias fe : lista) {
             modelo.addRow(new Object[]{fe.getId(), app.funcionarios.nome(fe.getFuncionarioId()),
                     fe.getInicio(), fe.getFim(), fe.getDiasGozo(), fe.getAnoReferencia(), fe.getEstado()});
         }

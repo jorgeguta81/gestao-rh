@@ -25,10 +25,63 @@ final class Ui {
         painel.add(campo, c);
     }
 
+    /**
+     * Modelo só de leitura. O tipo de cada coluna vem do primeiro valor (Integer, Double, LocalDate...),
+     * por isso clicar no cabeçalho ordena números e datas correctamente (e não como texto).
+     */
     static DefaultTableModel modeloTabela(String... colunas) {
         return new DefaultTableModel(colunas, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override public Class<?> getColumnClass(int c) {
+                for (int r = 0; r < getRowCount(); r++) {
+                    Object v = getValueAt(r, c);
+                    if (v != null) return v.getClass();
+                }
+                return Object.class;
+            }
         };
+    }
+
+    /** Liga a ordenação por clique no cabeçalho e formata os valores monetários (Double) com 2 casas e alinhados à direita. */
+    static JTable configurar(JTable tabela) {
+        tabela.setAutoCreateRowSorter(true);
+        tabela.setDefaultRenderer(Double.class, new javax.swing.table.DefaultTableCellRenderer() {
+            { setHorizontalAlignment(SwingConstants.RIGHT); }
+            @Override protected void setValue(Object v) { setText(v instanceof Double d ? dinheiro(d) : String.valueOf(v)); }
+        });
+        return tabela;
+    }
+
+    /** Mostra o nome de um Departamento numa lista; outros itens (ex.: "Todos") aparecem como texto. */
+    static ListCellRenderer<Object> rendererDepartamento() {
+        return new DefaultListCellRenderer() {
+            @Override public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
+                super.getListCellRendererComponent(l, v, i, s, f);
+                if (v instanceof rh.modelo.Departamento d) setText(d.getNome());
+                return this;
+            }
+        };
+    }
+
+    /** Painel de filtros com duas linhas (não transborda em janelas estreitas). */
+    static JPanel painelFiltros(String titulo, JComponent[] linha1, JComponent[] linha2) {
+        JPanel p = new JPanel(new GridLayout(2, 1));
+        p.setBorder(BorderFactory.createTitledBorder(titulo));
+        for (JComponent[] linha : new JComponent[][]{linha1, linha2}) {
+            JPanel l = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
+            for (JComponent c : linha) l.add(c);
+            p.add(l);
+        }
+        return p;
+    }
+
+    /** Executa a acção sempre que o texto do campo muda (pesquisa enquanto se escreve). */
+    static void aoEscrever(JTextField campo, Runnable acao) {
+        campo.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { acao.run(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { acao.run(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { acao.run(); }
+        });
     }
 
     static double numero(JTextField campo, String nome) {

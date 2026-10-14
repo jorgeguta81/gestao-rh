@@ -6,6 +6,7 @@ import rh.excecao.AcessoNegadoException;
 import rh.excecao.RecursoNaoEncontradoException;
 import rh.modelo.Ferias;
 import rh.modelo.Permissao;
+import rh.servico.CriterioFerias;
 import rh.servico.FeriasServico;
 
 /** Controlador (MVC): pedidos de férias. */
@@ -53,6 +54,13 @@ public class FeriasControlador {
             throw new AcessoNegadoException("Só pode cancelar os seus próprios pedidos.");
         servico.cancelar(feriasId);
         sessao.auditar("FERIAS_CANCELADAS id=" + feriasId);
+    }
+
+    /** Pesquisa/filtros/ordenação; RH/Admin vêem todos, os restantes só os seus pedidos. */
+    public List<Ferias> pesquisar(CriterioFerias criterio) {
+        sessao.exigirAutenticado();
+        boolean todas = sessao.tem(Permissao.FERIAS_VER_TODAS);
+        return servico.pesquisar(criterio).stream().filter(f -> todas || f.getFuncionarioId() == sessao.funcionarioId()).toList();
     }
 
     /** RH/Admin vêem todos; os restantes só os seus. */

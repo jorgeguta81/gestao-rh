@@ -2,6 +2,7 @@ package rh.servico;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import rh.config.ParametrosLegais;
@@ -10,6 +11,7 @@ import rh.excecao.RegraNegocioException;
 import rh.excecao.ValidacaoException;
 import rh.modelo.*;
 import rh.repositorio.Repositorio;
+import rh.util.Texto;
 import rh.util.Validador;
 
 public class FuncionarioServico {
@@ -47,6 +49,34 @@ public class FuncionarioServico {
         repo.atualizar(f);
         return f;
     }
+
+    /** Pesquisa com filtros e ordenação (ver {@link CriterioFuncionario}). */
+    public List<Funcionario> pesquisar(CriterioFuncionario c) {
+        Comparator<Funcionario> ordem = switch (c.ordenarPor()) {
+            case ID -> Comparator.comparingInt(Funcionario::getId);
+            case ADMISSAO -> Comparator.comparing(Funcionario::getDataAdmissao, Comparator.nullsLast(Comparator.naturalOrder()));
+            case SALARIO -> Comparator.comparingDouble(Funcionario::calcularSalarioBruto);
+            case CARGO -> Comparator.comparing(f -> Texto.normalizar(f.getCargo()));
+            case DEPARTAMENTO -> Comparator.comparing(f -> Texto.normalizar(nomeDepartamento(f.getDepartamentoId())));
+            case NOME -> Comparator.comparing(f -> Texto.normalizar(f.getNome()));
+        };
+        if (!c.ascendente()) ordem = ordem.reversed();
+        return repo.listarTodos().stream()
+                .filter(f -> c.tipo() == null || TipoFuncionario.de(f) == c.tipo())
+                .filter(f -> c.departamentoId() == 0 || f.getDepartamentoId() == c.departamentoId())
+                .filter(f -> switch (c.estado()) {
+                    case TODOS -> true;
+                    case ACTIVOS -> f.isAtivo();
+                    case INACTIVOS -> !f.isAtivo();
+                })
+                .filter(f -> Texto.contemTodas(String.join(" ", f.getNome(), f.getBi(), nuloVazio(f.getNuit()),
+                        nuloVazio(f.getCargo()), nuloVazio(f.getEmail()), nuloVazio(f.getTelefone())), c.texto()))
+                .sorted(ordem)
+                .toList();
+    }
+
+    private String nomeDepartamento(int id) { return departamentos.buscarPorId(id).map(Departamento::getNome).orElse(""); }
+    private static String nuloVazio(String s) { return s == null ? "" : s; }
 
     public Optional<Funcionario> buscar(int id) { return repo.buscarPorId(id); }
     public List<Funcionario> listar() { return repo.listarTodos(); }

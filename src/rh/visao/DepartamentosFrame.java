@@ -9,7 +9,8 @@ import rh.modelo.Permissao;
 /** TELA - Departamentos: criar, editar e remover. */
 public class DepartamentosFrame extends TelaBase {
     private final DefaultTableModel modelo = Ui.modeloTabela("ID", "Nome", "Descrição");
-    private final JTable tabela = new JTable(modelo);
+    private final JTable tabela = Ui.configurar(new JTable(modelo));
+    private final JTextField tfBusca = new JTextField(18);
     private final JTextField tfNome = new JTextField(20), tfDescricao = new JTextField(20);
     private final JButton bGravar = new JButton("Criar"), bRemover = new JButton("Remover"), bNovo = new JButton("Novo");
     private int editandoId = -1;
@@ -36,12 +37,19 @@ public class DepartamentosFrame extends TelaBase {
             if (!e.getValueIsAdjusting() && !aCarregar) aoSeleccionar();
         });
 
+        Ui.aoEscrever(tfBusca, this::atualizar);
+        JPanel busca = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+        busca.setBorder(BorderFactory.createTitledBorder("Pesquisar"));
+        busca.add(new JLabel("Nome ou descrição:")); busca.add(tfBusca);
+        JPanel centro = new JPanel(new BorderLayout());
+        centro.add(busca, BorderLayout.NORTH);
+        centro.add(new JScrollPane(tabela), BorderLayout.CENTER);
         add(topo, BorderLayout.NORTH);
-        add(new JScrollPane(tabela), BorderLayout.CENTER);
+        add(centro, BorderLayout.CENTER);
         add(rodapeVoltar(), BorderLayout.SOUTH);
         atualizar();
         novo();
-        dimensionar(600, 460);
+        dimensionar(640, 520);
     }
 
     private void gravar() {
@@ -91,7 +99,7 @@ public class DepartamentosFrame extends TelaBase {
         aCarregar = true;
         try {
             modelo.setRowCount(0);
-            for (Departamento d : app.departamentos.listar())
+            for (Departamento d : app.departamentos.pesquisar(tfBusca.getText()))
                 modelo.addRow(new Object[]{d.getId(), d.getNome(), d.getDescricao()});
             if (editandoId >= 0) Ui.seleccionar(tabela, editandoId);
         } finally {

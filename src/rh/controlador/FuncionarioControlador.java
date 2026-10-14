@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import rh.modelo.Funcionario;
 import rh.modelo.Permissao;
+import rh.servico.CriterioFuncionario;
 import rh.servico.DadosFuncionario;
 import rh.servico.FuncionarioServico;
 
@@ -46,6 +47,11 @@ public class FuncionarioControlador {
     }
 
     public List<Funcionario> listar() { sessao.exigir(Permissao.FUNCIONARIOS_VER); return servico.listar(); }
+
+    public List<Funcionario> pesquisar(CriterioFuncionario criterio) {
+        sessao.exigir(Permissao.FUNCIONARIOS_VER);
+        return servico.pesquisar(criterio);
+    }
 
     public Optional<Funcionario> buscar(int id) { sessao.exigir(Permissao.FUNCIONARIOS_VER); return servico.buscar(id); }
 

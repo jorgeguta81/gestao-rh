@@ -12,7 +12,9 @@ public class UtilizadoresFrame extends TelaBase {
     private record Item(int id, String texto) { @Override public String toString() { return texto; } }
 
     private final DefaultTableModel modelo = Ui.modeloTabela("ID", "Utilizador", "Perfil", "Funcionário", "Estado", "Último acesso");
-    private final JTable tabela = new JTable(modelo);
+    private final JTable tabela = Ui.configurar(new JTable(modelo));
+    private final JTextField tfBusca = new JTextField(14);
+    private final JComboBox<Object> cbFiltroPerfil = new JComboBox<>();
     private final JTextField tfNome = new JTextField(16);
     private final JPasswordField pfPassword = new JPasswordField(16);
     private final JComboBox<Perfil> cbPerfil = new JComboBox<>(Perfil.values());
@@ -49,7 +51,17 @@ public class UtilizadoresFrame extends TelaBase {
         });
 
         add(esquerda, BorderLayout.WEST);
-        add(new JScrollPane(tabela), BorderLayout.CENTER);
+        cbFiltroPerfil.addItem("Todos os perfis");
+        for (Perfil p : Perfil.values()) cbFiltroPerfil.addItem(p);
+        Ui.aoEscrever(tfBusca, this::atualizar);
+        cbFiltroPerfil.addActionListener(e -> atualizar());
+        JPanel busca = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+        busca.setBorder(BorderFactory.createTitledBorder("Pesquisar"));
+        busca.add(new JLabel("Utilizador:")); busca.add(tfBusca); busca.add(cbFiltroPerfil);
+        JPanel centro = new JPanel(new BorderLayout());
+        centro.add(busca, BorderLayout.NORTH);
+        centro.add(new JScrollPane(tabela), BorderLayout.CENTER);
+        add(centro, BorderLayout.CENTER);
         add(rodapeVoltar(), BorderLayout.SOUTH);
         atualizar();
         novo();
@@ -124,7 +136,8 @@ public class UtilizadoresFrame extends TelaBase {
 
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             modelo.setRowCount(0);
-            for (Utilizador u : app.utilizadores.listar()) {
+            Object fp = cbFiltroPerfil.getSelectedItem();
+            for (Utilizador u : app.utilizadores.pesquisar(tfBusca.getText(), fp instanceof Perfil pf ? pf : null)) {
                 String estado = !u.isAtivo() ? "Inactiva"
                         : u.getTentativasFalhadas() >= rh.servico.UtilizadorServico.MAX_TENTATIVAS ? "Bloqueada" : "Activa";
                 modelo.addRow(new Object[]{u.getId(), u.getNomeUtilizador(), u.getPerfil(),

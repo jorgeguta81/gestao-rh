@@ -101,6 +101,15 @@ public class UtilizadorServico {
     }
 
     public List<Utilizador> listar() { return repo.listarTodos(); }
+
+    /** Procura por nome de utilizador, filtrando por perfil (null = todos). */
+    public List<Utilizador> pesquisar(String texto, Perfil perfil) {
+        return repo.listarTodos().stream()
+                .filter(u -> perfil == null || u.getPerfil() == perfil)
+                .filter(u -> rh.util.Texto.contemTodas(u.getNomeUtilizador(), texto))
+                .sorted(java.util.Comparator.comparing(Utilizador::getNomeUtilizador))
+                .toList();
+    }
     public Optional<Utilizador> buscar(int id) { return repo.buscarPorId(id); }
 
     private Optional<Utilizador> procurar(String nome) {

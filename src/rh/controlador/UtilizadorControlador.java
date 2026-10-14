@@ -40,6 +40,11 @@ public class UtilizadorControlador {
 
     public List<Utilizador> listar() { sessao.exigir(Permissao.UTILIZADORES_GERIR); return servico.listar(); }
 
+    public List<Utilizador> pesquisar(String texto, Perfil perfil) {
+        sessao.exigir(Permissao.UTILIZADORES_GERIR);
+        return servico.pesquisar(texto, perfil);
+    }
+
     public Utilizador criar(String nome, String password, Perfil perfil, int funcionarioId) {
         sessao.exigir(Permissao.UTILIZADORES_GERIR);
         Utilizador u = servico.criar(nome, password, perfil, funcionarioId, true);
