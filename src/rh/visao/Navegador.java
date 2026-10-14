@@ -15,7 +15,7 @@ import rh.modelo.Utilizador;
 public final class Navegador {
 
     /** Todas as telas da aplicação. */
-    public enum Tela { LOGIN, MENU, FUNCIONARIOS, DEPARTAMENTOS, FERIAS, FOLHA, UTILIZADORES }
+    public enum Tela { LOGIN, MENU, FUNCIONARIOS, DEPARTAMENTOS, FERIAS, FOLHA, UTILIZADORES, DASHBOARD }
 
     private final Aplicacao app;
     private final Map<Tela, JFrame> abertas = new EnumMap<>(Tela.class);
@@ -92,6 +92,7 @@ public final class Navegador {
             case FERIAS -> new FeriasFrame(this);
             case FOLHA -> new FolhaFrame(this);
             case UTILIZADORES -> new UtilizadoresFrame(this);
+            case DASHBOARD -> new DashboardFrame(this);
         };
     }
 }

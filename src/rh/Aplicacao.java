@@ -16,6 +16,7 @@ public final class Aplicacao {
     public final Sessao sessao = new Sessao();
     public final UtilizadorControlador utilizadores;
     public final DefinicoesControlador definicoes;
+    public final RelatorioControlador relatorios;
     public final DepartamentoControlador departamentos;
     public final FuncionarioControlador funcionarios;
     public final FeriasControlador ferias;
@@ -39,13 +40,15 @@ public final class Aplicacao {
         FeriasServico feriasServ = new FeriasServico(feriasRepo, funcRepo);
         FolhaSalarioServico folhaServ = new FolhaSalarioServico(funcRepo);
         UtilizadorServico utilServ = new UtilizadorServico(utilRepo, funcRepo);
+        RelatorioServico relServ = new RelatorioServico(funcRepo, depRepo, feriasRepo, utilRepo, defServ, folhaServ);
 
         departamentos = new DepartamentoControlador(depServ, sessao);
         funcionarios = new FuncionarioControlador(funcServ, sessao);
         ferias = new FeriasControlador(feriasServ, sessao);
-        folha = new FolhaControlador(folhaServ, sessao);
+        folha = new FolhaControlador(folhaServ, relServ, sessao);
         utilizadores = new UtilizadorControlador(utilServ, sessao);
         definicoes = new DefinicoesControlador(defServ, sessao);
+        relatorios = new RelatorioControlador(relServ, sessao);
 
         // Dados de exemplo só na primeira execução (quando ainda não há nada gravado)
         boolean primeiraVez = depServ.listar().isEmpty() && funcServ.listar().isEmpty();

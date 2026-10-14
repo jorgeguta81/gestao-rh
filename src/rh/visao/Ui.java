@@ -103,7 +103,7 @@ final class Ui {
         return (int) v;
     }
 
-    static String dinheiro(double v) { return String.format("%,.2f", v); }
+    static String dinheiro(double v) { return rh.util.Formato.dinheiro(v); }
 
     static void erro(Component pai, String msg) {
         JOptionPane.showMessageDialog(pai, msg, "Erro", JOptionPane.ERROR_MESSAGE);

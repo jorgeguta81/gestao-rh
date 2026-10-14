@@ -151,8 +151,7 @@ public class FuncionarioServico {
         switch (d.tipo()) {
             case EFECTIVO, GESTOR -> {
                 double min = definicoes.salarioMinimo();
-                if (d.valor1() < min) e.add(String.format("Salário base abaixo do salário mínimo do sector \"%s\" (%,.2f MT).",
-                        definicoes.sector(), min));
+                if (d.valor1() < min) e.add("Salário base abaixo do salário mínimo do sector \"" + definicoes.sector() + "\" (" + rh.util.Formato.dinheiro(min) + " MT).");
             }
             case CONTRATADO -> {
                 if (d.valor1() <= 0) e.add("O valor por hora tem de ser positivo.");

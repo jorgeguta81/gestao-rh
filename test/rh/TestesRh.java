@@ -61,6 +61,7 @@ public class TestesRh {
         ferias();
         acesso();
         pesquisa();
+        relatorios();
         excepcoes();
         System.out.println("\n" + (feitos - falhados) + "/" + feitos + " verificações OK");
         System.exit(falhados == 0 ? 0 : 1);
@@ -144,7 +145,7 @@ public class TestesRh {
         app.funcionarios.admitir(efectivo("110100000032A", "400000032", 10845));
         ok(true, "salário igual ao mínimo é aceite");
         app.definicoes.guardar("Banco Teste", SectorActividade.BANCA_SEGUROS);
-        lanca(ValidacaoException.class, String.format("%,.2f", 20361.43), () -> app.funcionarios.admitir(efectivo("110100000033A", "400000033", 15000)),
+        lanca(ValidacaoException.class, rh.util.Formato.dinheiro(20361.43), () -> app.funcionarios.admitir(efectivo("110100000033A", "400000033", 15000)),
                 "mudar de sector muda o mínimo (banca: 20.361,43 MT)");
         ok(app.definicoes.nomeEmpresa().equals("Banco Teste") && app.definicoes.sector() == SectorActividade.BANCA_SEGUROS, "definições guardadas");
         app.funcionarios.admitir(new DadosFuncionario(TipoFuncionario.CONTRATADO, "Contratada Teste", "110100000034A", "400000034",
@@ -329,6 +330,69 @@ public class TestesRh {
         ok(app.ferias.pesquisar(new CriterioFerias("ana", null, null, CriterioFerias.Campo.INICIO, true)).isEmpty(), "funcionário não encontra pedidos de colegas pesquisando o nome");
         lanca(AcessoNegadoException.class, null, () -> app.funcionarios.pesquisar(todos), "funcionário não pesquisa funcionários");
         ok(app.folha.linhas("ana", null).isEmpty() && app.folha.linhas("", null).size() == 1, "funcionário só encontra o seu recibo");
+    }
+
+    // ------------------------------------------------------------------ relatórios
+    static void relatorios() throws Exception {
+        seccao("Relatórios, recibo e dashboard");
+        Aplicacao app = nova();
+        app.definicoes.guardar("Empresa Teste, Lda", SectorActividade.SERVICOS_NAO_FINANCEIROS);
+        app.ferias.solicitar(2, LocalDate.now().plusDays(10), LocalDate.now().plusDays(20), LocalDate.now().plusDays(10).getYear());
+        int pedidoCarlos = app.ferias.listar().get(0).getId();
+        app.ferias.decidir(pedidoCarlos, true);
+        app.ferias.solicitar(3, LocalDate.now().plusDays(60), LocalDate.now().plusDays(75), LocalDate.now().plusDays(60).getYear());
+
+        var p = app.relatorios.painel();
+        ok(p.totalFuncionarios() == 4 && p.activos() == 4 && p.inactivos() == 0, "painel: contagens");
+        ok(p.activosPorTipo().get(TipoFuncionario.GESTOR) == 1 && p.activosPorTipo().get(TipoFuncionario.ESTAGIARIO) == 1, "painel: por tipo");
+        ok(Math.abs(p.folha().bruto() - 181_000) < 0.01, "painel: massa bruta = 75.000+38.000+60.000+8.000");
+        ok(Math.abs(p.folha().liquido() - (62_375 + 34_263 + 51_335 + 8_000)) < 0.01, "painel: líquido = soma dos líquidos");
+        ok(Math.abs(p.folha().inssPatronal() - (3_000 + 1_520 + 2_400)) < 0.01, "painel: INSS patronal (estagiário isento)");
+        ok(Math.abs(p.folha().custoEmpresa() - (181_000 + 6_920)) < 0.01, "painel: custo da empresa = bruto + INSS patronal");
+        ok(Math.abs(p.salarioMedio() - 45_250) < 0.01, "painel: salário médio");
+        ok(p.departamentos().size() == 2 && p.departamentos().get(0).activos() == 2 && Math.abs(p.departamentos().get(0).massaBruta() - 135_000) < 0.01, "painel: massa do departamento de RH (Ana + Marta)");
+        ok(p.ferias().pendentes() == 1 && p.ferias().aprovadas() == 1 && p.ferias().proximos30Dias() == 1 && p.ferias().emFeriasHoje() == 0, "painel: resumo de férias");
+        ok(p.alertas().stream().anyMatch(a -> a.contains("a aguardar decisão")), "alerta: férias pendentes");
+        ok(p.admissoesUltimos12Meses() == 0, "painel: admissões nos últimos 12 meses (nenhuma no exemplo)");
+        app.funcionarios.demitir(4);
+        ok(app.relatorios.painel().activos() == 3 && app.relatorios.painel().inactivos() == 1, "painel: demitido deixa de contar como activo");
+        ok(app.relatorios.painel().folha().bruto() == 173_000, "painel: demitido sai da massa salarial");
+
+        String recibo = app.folha.recibo(1, java.time.YearMonth.of(2026, 10));
+        ok(recibo.contains("outubro de 2026") && recibo.contains("Empresa Teste, Lda") && recibo.contains("Ana Macuácua")
+                && recibo.contains("400000001") && recibo.contains("TOTAL BRUTO") && recibo.contains(rh.util.Formato.dinheiro(75_000))
+                && recibo.contains(rh.util.Formato.dinheiro(62_375)) && recibo.contains(rh.util.Formato.dinheiro(-10_375)), "recibo da Ana: identificação, período, bruto, IRPS e líquido");
+        ok(app.folha.recibo(3, java.time.YearMonth.of(2026, 10)).contains("120 h x"), "recibo do contratado mostra horas x valor/hora");
+        ok(app.folha.recibo(4, java.time.YearMonth.of(2026, 10)).contains("Bolsa de estágio"), "recibo do estagiário mostra a bolsa");
+
+        Path csvFolha = Files.createTempFile("folha", ".csv");
+        app.relatorios.exportar(rh.servico.RelatorioServico.Relatorio.FOLHA, csvFolha);
+        String conteudo = Files.readString(csvFolha);
+        ok(conteudo.startsWith("\uFEFFID;Nome;Tipo;Bruto") && conteudo.contains("Ana Macuácua") && conteudo.contains("TOTAL"), "CSV da folha: BOM, cabeçalho, dados e total");
+        ok(conteudo.contains("75000,00"), "CSV usa vírgula decimal e sem separador de milhares");
+        // injecção de fórmulas
+        app.funcionarios.admitir(new DadosFuncionario(TipoFuncionario.EFECTIVO, "Hacker Teste", "110100000060A", "400000060", LocalDate.of(1990, 1, 1),
+                "", "841234567", "=HYPERLINK(\"http://x\")", 1, LocalDate.now(), 20000, 0, 0));
+        Path csvFunc = Files.createTempFile("func", ".csv");
+        app.relatorios.exportar(rh.servico.RelatorioServico.Relatorio.FUNCIONARIOS, csvFunc);
+        String cf = Files.readString(csvFunc);
+        ok(cf.contains("'=HYPERLINK") && !cf.contains(";=HYPERLINK"), "CSV neutraliza fórmulas (= no início da célula)");
+        Path csvFerias = Files.createTempFile("ferias", ".csv");
+        app.relatorios.exportar(rh.servico.RelatorioServico.Relatorio.FERIAS, csvFerias);
+        ok(Files.readAllLines(csvFerias).size() == 3, "CSV de férias: cabeçalho + 2 pedidos");
+        lanca(PersistenciaException.class, "gravar", () -> app.relatorios.exportar(rh.servico.RelatorioServico.Relatorio.FOLHA, Path.of("/proc/nao/existe.csv")), "exportar para local inválido dá erro claro");
+
+        // permissões
+        app.utilizadores.terminarSessao();
+        app.utilizadores.login("carlos", "Func@1234");
+        lanca(AcessoNegadoException.class, null, () -> app.relatorios.painel(), "funcionário não vê o dashboard");
+        lanca(AcessoNegadoException.class, null, () -> app.relatorios.exportar(rh.servico.RelatorioServico.Relatorio.FOLHA, csvFolha), "funcionário não exporta relatórios");
+        ok(app.folha.recibo(2, java.time.YearMonth.now()).contains("Carlos Sitoe"), "funcionário vê o seu recibo");
+        lanca(AcessoNegadoException.class, "próprio recibo", () -> app.folha.recibo(1, java.time.YearMonth.now()), "funcionário não vê o recibo de outro");
+        app.utilizadores.terminarSessao();
+        app.utilizadores.login("rh", "Rh@12345");
+        ok(app.relatorios.painel().activos() >= 3 && app.folha.recibo(2, java.time.YearMonth.now()).contains("Carlos"), "RH vê o dashboard e qualquer recibo");
+        lanca(AcessoNegadoException.class, null, () -> app.definicoes.guardar("x", SectorActividade.CONSTRUCAO), "RH continua sem poder mudar definições");
     }
 
     // ------------------------------------------------------------------ excepções

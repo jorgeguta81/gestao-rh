@@ -9,6 +9,7 @@ import rh.servico.FolhaSalarioServico.LinhaFolha;
 public class FolhaFrame extends TelaBase {
     private final DefaultTableModel modelo = Ui.modeloTabela(
             "ID", "Nome", "Tipo", "Bruto (MT)", "INSS 3% (MT)", "IRPS (MT)", "Líquido (MT)", "Custo empresa (MT)");
+    private final JTable tabela;
     private final JLabel total = new JLabel(" ");
     private final JTextField tfBusca = new JTextField(14);
     private final JComboBox<Object> cbTipo = new JComboBox<>();
@@ -16,6 +17,8 @@ public class FolhaFrame extends TelaBase {
     public FolhaFrame(Navegador nav) {
         super(nav.app().sessao.tem(rh.modelo.Permissao.FOLHA_VER_TODOS) ? "Folha de salários" : "O meu recibo", nav);
 
+        JButton bRecibo = new JButton("Ver recibo");
+        bRecibo.addActionListener(e -> verRecibo());
         JButton bActualizar = new JButton("Actualizar");
         bActualizar.addActionListener(e -> atualizar());
 
@@ -24,11 +27,12 @@ public class FolhaFrame extends TelaBase {
         rodape.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
         rodape.add(total, BorderLayout.CENTER);
         JPanel acoes = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        acoes.add(bRecibo);
         acoes.add(bActualizar);
         acoes.add(botaoVoltar());
         rodape.add(acoes, BorderLayout.EAST);
 
-        JTable tabela = Ui.configurar(new JTable(modelo));
+        tabela = Ui.configurar(new JTable(modelo));
         Ui.larguras(tabela, 40, 170, 90, 100, 100, 100, 110, 130);
         cbTipo.addItem("Todos os tipos");
         for (rh.modelo.TipoFuncionario t : rh.modelo.TipoFuncionario.values()) cbTipo.addItem(t);
@@ -45,6 +49,36 @@ public class FolhaFrame extends TelaBase {
 
         atualizar();
         dimensionar(1000, 400);
+    }
+
+    /** Mostra o recibo de vencimento do mês actual para a linha seleccionada (ou para o próprio, se só houver uma). */
+    private void verRecibo() {
+        Ui.tentar(this, () -> {
+            int id = Ui.idSeleccionado(tabela);
+            if (id < 0 && tabela.getRowCount() == 1) id = (Integer) tabela.getValueAt(0, 0);
+            if (id < 0) throw new rh.excecao.ValidacaoException("Seleccione um funcionário na tabela.");
+            String texto = app.folha.recibo(id, java.time.YearMonth.now());
+
+            JTextArea area = new JTextArea(texto);
+            area.setEditable(false);
+            area.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
+            JScrollPane sp = new JScrollPane(area);
+            sp.setPreferredSize(new Dimension(560, 420));
+            Object[] opcoes = {"Guardar como .txt", "Fechar"};
+            int r = JOptionPane.showOptionDialog(this, sp, "Recibo de vencimento", JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.PLAIN_MESSAGE, null, opcoes, opcoes[1]);
+            if (r == 0) {
+                JFileChooser fc = new JFileChooser();
+                fc.setSelectedFile(new java.io.File("recibo-" + id + "-" + java.time.YearMonth.now() + ".txt"));
+                if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+                    try {
+                        java.nio.file.Files.writeString(fc.getSelectedFile().toPath(), texto, java.nio.charset.StandardCharsets.UTF_8);
+                    } catch (java.io.IOException ex) {
+                        throw new rh.excecao.PersistenciaException("Não foi possível gravar o recibo.", ex);
+                    }
+                }
+            }
+        });
     }
 
     @Override
