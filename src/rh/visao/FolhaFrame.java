@@ -26,12 +26,14 @@ public class FolhaFrame extends TelaBase {
         acoes.add(botaoVoltar());
         rodape.add(acoes, BorderLayout.EAST);
 
-        add(new JScrollPane(new JTable(modelo)), BorderLayout.CENTER);
+        JTable tabela = new JTable(modelo);
+        Ui.larguras(tabela, 40, 170, 90, 100, 100, 100, 110, 130);
+        add(new JScrollPane(tabela), BorderLayout.CENTER);
         add(rodape, BorderLayout.SOUTH);
 
 
         atualizar();
-        dimensionar(720, 380);
+        dimensionar(1000, 400);
     }
 
     @Override
@@ -46,7 +48,7 @@ public class FolhaFrame extends TelaBase {
             totalLiquido += l.liquido();
             totalCusto += l.custoEmpresa();
         }
-        total.setText("TOTAL: Bruto " + Ui.dinheiro(totalBruto) + " MT | Líquido " + Ui.dinheiro(totalLiquido)
-                + " MT | Custo para a empresa " + Ui.dinheiro(totalCusto) + " MT");
+        total.setText("Totais (MT): bruto " + Ui.dinheiro(totalBruto) + " | líquido " + Ui.dinheiro(totalLiquido)
+                + " | custo empresa " + Ui.dinheiro(totalCusto));
     }
 }

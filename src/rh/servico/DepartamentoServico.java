@@ -2,6 +2,9 @@ package rh.servico;
 
 import java.util.List;
 import java.util.Optional;
+import rh.excecao.RecursoNaoEncontradoException;
+import rh.excecao.RegraNegocioException;
+import rh.excecao.ValidacaoException;
 import rh.modelo.Departamento;
 import rh.modelo.Funcionario;
 import rh.repositorio.Repositorio;
@@ -34,7 +37,7 @@ public class DepartamentoServico {
     public void remover(int id) {
         obter(id);
         long n = funcionarios.listarTodos().stream().filter(f -> f.getDepartamentoId() == id).count();
-        if (n > 0) throw new IllegalArgumentException(
+        if (n > 0) throw new RegraNegocioException(
                 "O departamento ainda tem " + n + " funcionário(s). Transfira-os antes de o remover.");
         repo.remover(id);
     }
@@ -43,13 +46,13 @@ public class DepartamentoServico {
     public List<Departamento> listar() { return repo.listarTodos(); }
 
     private Departamento obter(int id) {
-        return repo.buscarPorId(id).orElseThrow(() -> new IllegalArgumentException("Departamento não encontrado."));
+        return repo.buscarPorId(id).orElseThrow(() -> new RecursoNaoEncontradoException("Departamento não encontrado."));
     }
 
     private void validar(String nome, int idIgnorado) {
-        if (nome == null || nome.isBlank()) throw new IllegalArgumentException("O nome do departamento é obrigatório.");
+        if (nome == null || nome.isBlank()) throw new ValidacaoException("O nome do departamento é obrigatório.");
         boolean repetido = repo.listarTodos().stream()
                 .anyMatch(d -> d.getId() != idIgnorado && d.getNome().equalsIgnoreCase(nome.trim()));
-        if (repetido) throw new IllegalArgumentException("Já existe um departamento com este nome.");
+        if (repetido) throw new RegraNegocioException("Já existe um departamento com este nome.");
     }
 }

@@ -2,7 +2,6 @@ package rh.visao;
 
 import java.awt.*;
 import javax.swing.*;
-import rh.excecao.RhException;
 import javax.swing.table.DefaultTableModel;
 import rh.modelo.Departamento;
 import rh.modelo.Permissao;
@@ -46,25 +45,21 @@ public class DepartamentosFrame extends TelaBase {
     }
 
     private void gravar() {
-        try {
+        Ui.tentar(this, () -> {
             if (editandoId < 0) app.departamentos.criar(tfNome.getText(), tfDescricao.getText());
             else app.departamentos.atualizar(editandoId, tfNome.getText(), tfDescricao.getText());
             novo();
             atualizar();
-        } catch (IllegalArgumentException | RhException ex) {
-            Ui.erro(this, ex.getMessage());
-        }
+        });
     }
 
     private void remover() {
-        try {
+        Ui.tentar(this, () -> {
             if (!Ui.confirmar(this, "Remover este departamento?")) return;
             app.departamentos.remover(editandoId);
             novo();
             atualizar();
-        } catch (IllegalArgumentException | RhException ex) {
-            Ui.erro(this, ex.getMessage());
-        }
+        });
     }
 
     private void novo() {

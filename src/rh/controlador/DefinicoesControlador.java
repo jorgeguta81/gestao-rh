@@ -20,5 +20,6 @@ public class DefinicoesControlador {
     public void guardar(String nomeEmpresa, SectorActividade sector) {
         sessao.exigir(Permissao.DEFINICOES_EDITAR);
         servico.guardar(nomeEmpresa, sector);
+        sessao.auditar("DEFINICOES_ALTERADAS sector=" + sector.name());
     }
 }

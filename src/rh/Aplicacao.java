@@ -6,6 +6,7 @@ import rh.controlador.*;
 import rh.modelo.*;
 import rh.repositorio.*;
 import rh.servico.*;
+import rh.util.Registo;
 
 /**
  * Raiz de composição: cria repositórios, serviços e controladores e liga-os.
@@ -26,6 +27,7 @@ public final class Aplicacao {
     public Aplicacao() { this(pastaDados()); }
 
     public Aplicacao(Path pasta) {
+        Registo.iniciar(pasta);
         Repositorio<Departamento> depRepo = new RepositorioFicheiro<>(pasta.resolve("departamentos.dat"));
         Repositorio<Funcionario> funcRepo = new RepositorioFicheiro<>(pasta.resolve("funcionarios.dat"));
         Repositorio<Ferias> feriasRepo = new RepositorioFicheiro<>(pasta.resolve("ferias.dat"));

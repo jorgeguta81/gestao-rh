@@ -3,8 +3,9 @@ package rh.visao;
 import java.awt.*;
 import java.time.LocalDate;
 import javax.swing.*;
-import rh.excecao.RhException;
 import javax.swing.table.DefaultTableModel;
+import rh.excecao.RecursoNaoEncontradoException;
+import rh.excecao.ValidacaoException;
 import rh.modelo.*;
 import rh.servico.DadosFuncionario;
 
@@ -103,7 +104,7 @@ public class FuncionariosFrame extends TelaBase {
     private DadosFuncionario lerFormulario() {
         TipoFuncionario t = (TipoFuncionario) cbTipo.getSelectedItem();
         Departamento dep = (Departamento) cbDep.getSelectedItem();
-        if (dep == null) throw new IllegalArgumentException("Escolha um departamento.");
+        if (dep == null) throw new ValidacaoException("Escolha um departamento.");
         double v1 = 0, v2 = 0, v3 = 0;
         if (t.rotuloValor(0) != null) v1 = Ui.numero(tfV1, t.rotuloValor(0));
         if (t.rotuloValor(1) != null) v2 = t == TipoFuncionario.CONTRATADO ? Ui.inteiro(tfV2, t.rotuloValor(1)) : Ui.numero(tfV2, t.rotuloValor(1));
@@ -114,7 +115,7 @@ public class FuncionariosFrame extends TelaBase {
     }
 
     private void gravar() {
-        try {
+        Ui.tentar(this, () -> {
             DadosFuncionario d = lerFormulario();
             if (editandoId < 0) {
                 Funcionario f = app.funcionarios.admitir(d);
@@ -125,14 +126,13 @@ public class FuncionariosFrame extends TelaBase {
             }
             novo();
             atualizar();
-        } catch (IllegalArgumentException | RhException ex) {
-            Ui.erro(this, ex.getMessage());
-        }
+        });
     }
 
     private void alterarEstado() {
-        try {
-            Funcionario f = app.funcionarios.buscar(editandoId).orElseThrow();
+        Ui.tentar(this, () -> {
+            Funcionario f = app.funcionarios.buscar(editandoId)
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("O funcionário já não existe."));
             if (f.isAtivo()) {
                 if (!Ui.confirmar(this, "Demitir " + f.getNome() + "? Fica inactivo mas o histórico mantém-se.")) return;
                 app.funcionarios.demitir(editandoId);
@@ -141,20 +141,16 @@ public class FuncionariosFrame extends TelaBase {
             }
             atualizar();
             aoSeleccionar();
-        } catch (IllegalArgumentException | RhException ex) {
-            Ui.erro(this, ex.getMessage());
-        }
+        });
     }
 
     private void remover() {
-        try {
+        Ui.tentar(this, () -> {
             if (!Ui.confirmar(this, "Remover definitivamente este funcionário? Esta acção não pode ser desfeita.")) return;
             app.funcionarios.remover(editandoId);
             novo();
             atualizar();
-        } catch (IllegalArgumentException | RhException ex) {
-            Ui.erro(this, ex.getMessage());
-        }
+        });
     }
 
     /** Limpa o formulário e volta ao modo "admitir". */

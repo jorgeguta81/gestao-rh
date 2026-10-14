@@ -55,7 +55,7 @@ public class LoginFrame extends JFrame {
             lbErro.setText(" ");
             tfUtilizador.setText("");
             nav.aposLogin(this);
-        } catch (RhException | IllegalArgumentException ex) {
+        } catch (RhException ex) {
             lbErro.setText(ex.getMessage());
             pfPassword.requestFocus();
         }

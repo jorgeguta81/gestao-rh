@@ -17,6 +17,11 @@ public final class Sessao {
     /** ID do funcionário associado à conta (0 se não houver). */
     public int funcionarioId() { return utilizador == null ? Utilizador.SEM_FUNCIONARIO : utilizador.getFuncionarioId(); }
 
+    /** Regista no ficheiro de auditoria quem fez o quê (nunca dados sensíveis). */
+    public void auditar(String accao) {
+        rh.util.Registo.auditar(utilizador == null ? "-" : utilizador.getNomeUtilizador() + "(" + perfil() + ")", accao);
+    }
+
     public boolean tem(Permissao p) { return utilizador != null && utilizador.getPerfil().permite(p); }
 
     public void exigirAutenticado() {

@@ -17,11 +17,33 @@ public class FuncionarioControlador {
         this.sessao = sessao;
     }
 
-    public Funcionario admitir(DadosFuncionario d) { sessao.exigir(Permissao.FUNCIONARIOS_EDITAR); return servico.admitir(d); }
-    public Funcionario atualizar(int id, DadosFuncionario d) { sessao.exigir(Permissao.FUNCIONARIOS_EDITAR); return servico.atualizar(id, d); }
-    public void demitir(int id) { sessao.exigir(Permissao.FUNCIONARIOS_EDITAR); servico.demitir(id); }
-    public void reativar(int id) { sessao.exigir(Permissao.FUNCIONARIOS_EDITAR); servico.reativar(id); }
-    public void remover(int id) { sessao.exigir(Permissao.FUNCIONARIOS_REMOVER); servico.remover(id); }
+    public Funcionario admitir(DadosFuncionario d) {
+        sessao.exigir(Permissao.FUNCIONARIOS_EDITAR);
+        Funcionario f = servico.admitir(d);
+        sessao.auditar("FUNCIONARIO_ADMITIDO id=" + f.getId());
+        return f;
+    }
+    public Funcionario atualizar(int id, DadosFuncionario d) {
+        sessao.exigir(Permissao.FUNCIONARIOS_EDITAR);
+        Funcionario f = servico.atualizar(id, d);
+        sessao.auditar("FUNCIONARIO_ACTUALIZADO id=" + id);
+        return f;
+    }
+    public void demitir(int id) {
+        sessao.exigir(Permissao.FUNCIONARIOS_EDITAR);
+        servico.demitir(id);
+        sessao.auditar("FUNCIONARIO_DEMITIDO id=" + id);
+    }
+    public void reativar(int id) {
+        sessao.exigir(Permissao.FUNCIONARIOS_EDITAR);
+        servico.reativar(id);
+        sessao.auditar("FUNCIONARIO_REACTIVADO id=" + id);
+    }
+    public void remover(int id) {
+        sessao.exigir(Permissao.FUNCIONARIOS_REMOVER);
+        servico.remover(id);
+        sessao.auditar("FUNCIONARIO_REMOVIDO id=" + id);
+    }
 
     public List<Funcionario> listar() { sessao.exigir(Permissao.FUNCIONARIOS_VER); return servico.listar(); }
 

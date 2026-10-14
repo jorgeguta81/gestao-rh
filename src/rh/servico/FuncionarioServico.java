@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import rh.config.ParametrosLegais;
+import rh.excecao.RecursoNaoEncontradoException;
+import rh.excecao.RegraNegocioException;
 import rh.excecao.ValidacaoException;
 import rh.modelo.*;
 import rh.repositorio.Repositorio;
@@ -52,14 +54,14 @@ public class FuncionarioServico {
     /** Regra de negócio: demissão = desactivar (mantém o histórico). */
     public void demitir(int id) {
         Funcionario f = obter(id);
-        if (!f.isAtivo()) throw new IllegalArgumentException("O funcionário já está inactivo.");
+        if (!f.isAtivo()) throw new RegraNegocioException("O funcionário já está inactivo.");
         f.setAtivo(false);
         repo.atualizar(f);
     }
 
     public void reativar(int id) {
         Funcionario f = obter(id);
-        if (f.isAtivo()) throw new IllegalArgumentException("O funcionário já está activo.");
+        if (f.isAtivo()) throw new RegraNegocioException("O funcionário já está activo.");
         f.setAtivo(true);
         repo.atualizar(f);
     }
@@ -68,13 +70,13 @@ public class FuncionarioServico {
     public void remover(int id) {
         obter(id);
         boolean temFerias = ferias.listarTodos().stream().anyMatch(x -> x.getFuncionarioId() == id);
-        if (temFerias) throw new IllegalArgumentException(
+        if (temFerias) throw new RegraNegocioException(
                 "Este funcionário tem pedidos de férias registados. Use \"Demitir\" para manter o histórico.");
         repo.remover(id);
     }
 
     private Funcionario obter(int id) {
-        return repo.buscarPorId(id).orElseThrow(() -> new IllegalArgumentException("Funcionário não encontrado."));
+        return repo.buscarPorId(id).orElseThrow(() -> new RecursoNaoEncontradoException("Funcionário não encontrado."));
     }
 
     /** Tira espaços e uniformiza maiúsculas nos identificadores. */

@@ -2,10 +2,10 @@ package rh.visao;
 
 import java.awt.*;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import javax.swing.*;
-import rh.excecao.RhException;
 import javax.swing.table.DefaultTableModel;
+import rh.excecao.RhException;
+import rh.excecao.ValidacaoException;
 import rh.modelo.*;
 
 /** TELA 3 - Férias. ACÇÃO 2: Solicitar férias (valida o limite de dias úteis). */
@@ -35,6 +35,7 @@ public class FeriasFrame extends TelaBase {
         Ui.linha(form, 0, new JLabel("Funcionário:"), cbFunc);
         Ui.linha(form, 1, new JLabel("Início (AAAA-MM-DD):"), tfInicio);
         Ui.linha(form, 2, new JLabel("Fim (AAAA-MM-DD):"), tfFim);
+        spAno.setEditor(new JSpinner.NumberEditor(spAno, "#")); // sem separador de milhares
         Ui.linha(form, 3, new JLabel("Ano de referência:"), spAno);
         Ui.linha(form, 4, new JLabel("Direito e saldo:"), lbSaldo);
 
@@ -78,14 +79,12 @@ public class FeriasFrame extends TelaBase {
 
     /** Executa uma acção sobre o pedido seleccionado e recarrega a tabela. */
     private void accao(java.util.function.IntConsumer acao) {
-        try {
+        Ui.tentar(this, () -> {
             int id = Ui.idSeleccionado(tabela);
-            if (id < 0) throw new IllegalArgumentException("Seleccione um pedido na tabela.");
+            if (id < 0) throw new ValidacaoException("Seleccione um pedido na tabela.");
             acao.accept(id);
             atualizar();
-        } catch (IllegalArgumentException | RhException ex) {
-            Ui.erro(this, ex.getMessage());
-        }
+        });
     }
 
     /** Mostra o direito a férias e o saldo do funcionário escolhido no ano de referência. */
@@ -95,27 +94,23 @@ public class FeriasFrame extends TelaBase {
         try {
             var s = app.ferias.saldo(f.getId(), (Integer) spAno.getValue());
             lbSaldo.setText(s.direito() + " dias - " + s.usados() + " usados/pedidos = " + s.disponivel() + " disponíveis");
-        } catch (IllegalArgumentException | RhException ex) {
-            lbSaldo.setText(ex.getMessage());
+        } catch (RhException ex) {
+            lbSaldo.setText(ex.getMessage()); // texto informativo, não um diálogo
         }
     }
 
     private void solicitar() {
-        try {
+        Ui.tentar(this, () -> {
             Funcionario f = (Funcionario) cbFunc.getSelectedItem();
-            if (f == null) throw new IllegalArgumentException("Escolha um funcionário.");
-            LocalDate inicio = LocalDate.parse(tfInicio.getText().trim());
-            LocalDate fim = LocalDate.parse(tfFim.getText().trim());
+            if (f == null) throw new ValidacaoException("Escolha um funcionário.");
+            LocalDate inicio = Ui.data(tfInicio, "Início");
+            LocalDate fim = Ui.data(tfFim, "Fim");
 
             Ferias pedido = app.ferias.solicitar(f.getId(), inicio, fim, (Integer) spAno.getValue());
             atualizar();
             Ui.info(this, "Pedido #" + pedido.getId() + " registado (" + pedido.getDiasGozo()
                     + " dias de gozo, feriados excluídos). Estado: " + pedido.getEstado() + ".");
-        } catch (DateTimeParseException ex) {
-            Ui.erro(this, "Data inválida. Use o formato AAAA-MM-DD, por exemplo 2026-12-15.");
-        } catch (IllegalArgumentException | RhException ex) {
-            Ui.erro(this, ex.getMessage());
-        }
+        });
     }
 
     @Override

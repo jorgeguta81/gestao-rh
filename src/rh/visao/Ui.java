@@ -3,6 +3,8 @@ package rh.visao;
 import java.awt.*;
 import javax.swing.*;
 import java.time.LocalDate;
+import rh.excecao.*;
+import rh.util.Registo;
 import java.time.format.DateTimeParseException;
 import javax.swing.table.DefaultTableModel;
 
@@ -31,19 +33,20 @@ final class Ui {
 
     static double numero(JTextField campo, String nome) {
         String t = campo.getText().trim().replace(',', '.');
-        if (t.isEmpty()) throw new IllegalArgumentException("Preencha o campo \"" + nome + "\".");
+        if (t.isEmpty()) throw new ValidacaoException("Preencha o campo \"" + nome + "\".");
         try {
             double v = Double.parseDouble(t);
-            if (v < 0) throw new IllegalArgumentException("\"" + nome + "\" não pode ser negativo.");
+            if (!Double.isFinite(v)) throw new ValidacaoException("\"" + nome + "\" deve ser um número.");
+            if (v < 0) throw new ValidacaoException("\"" + nome + "\" não pode ser negativo.");
             return v;
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("\"" + nome + "\" deve ser um número.");
+            throw new ValidacaoException("\"" + nome + "\" deve ser um número.");
         }
     }
 
     static int inteiro(JTextField campo, String nome) {
         double v = numero(campo, nome);
-        if (v != Math.floor(v)) throw new IllegalArgumentException("\"" + nome + "\" deve ser um número inteiro.");
+        if (v != Math.floor(v)) throw new ValidacaoException("\"" + nome + "\" deve ser um número inteiro.");
         return (int) v;
     }
 
@@ -53,6 +56,37 @@ final class Ui {
         JOptionPane.showMessageDialog(pai, msg, "Erro", JOptionPane.ERROR_MESSAGE);
     }
 
+    /**
+     * Executa uma acção da tela e trata as excepções num só sítio:
+     * erros esperados (validação, regras, acesso) viram avisos claros; erros inesperados são
+     * registados no ficheiro de log e o utilizador vê uma mensagem genérica (nunca um stack trace).
+     */
+    static void tentar(Component pai, Runnable acao) {
+        try {
+            acao.run();
+        } catch (ValidacaoException e) {
+            JOptionPane.showMessageDialog(pai, e.getMessage(), "Dados inválidos", JOptionPane.WARNING_MESSAGE);
+        } catch (AcessoNegadoException e) {
+            JOptionPane.showMessageDialog(pai, e.getMessage(), "Acesso negado", JOptionPane.WARNING_MESSAGE);
+        } catch (PersistenciaException e) {
+            Registo.erro("Falha de persistência", e);
+            JOptionPane.showMessageDialog(pai, e.getMessage() + "\nA operação não foi concluída.\nDetalhes em: "
+                    + Registo.ficheiroDeErros(), "Erro ao gravar/ler dados", JOptionPane.ERROR_MESSAGE);
+        } catch (RhException e) {
+            JOptionPane.showMessageDialog(pai, e.getMessage(), "Operação não permitida", JOptionPane.WARNING_MESSAGE);
+        } catch (RuntimeException e) {
+            mostrarErroInesperado(pai, e);
+        }
+    }
+
+    /** Erro inesperado (bug): regista o detalhe e mostra mensagem simples. */
+    static void mostrarErroInesperado(Component pai, Throwable e) {
+        Registo.erro("Erro inesperado na interface", e);
+        JOptionPane.showMessageDialog(pai, "Ocorreu um erro inesperado e a operação foi cancelada.\n"
+                + "Os detalhes técnicos foram guardados em:\n" + Registo.ficheiroDeErros(),
+                "Erro inesperado", JOptionPane.ERROR_MESSAGE);
+    }
+
     static void info(Component pai, String msg) {
         JOptionPane.showMessageDialog(pai, msg, "Informação", JOptionPane.INFORMATION_MESSAGE);
     }
@@ -60,11 +94,11 @@ final class Ui {
     /** Lê uma data AAAA-MM-DD de um campo de texto. */
     static LocalDate data(JTextField campo, String nome) {
         String t = campo.getText().trim();
-        if (t.isEmpty()) throw new IllegalArgumentException("Preencha o campo \"" + nome + "\".");
+        if (t.isEmpty()) throw new ValidacaoException("Preencha o campo \"" + nome + "\".");
         try {
             return LocalDate.parse(t);
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("\"" + nome + "\": data inválida. Use AAAA-MM-DD, por exemplo 2026-12-15.");
+            throw new ValidacaoException("\"" + nome + "\": data inválida. Use AAAA-MM-DD, por exemplo 2026-12-15.");
         }
     }
 

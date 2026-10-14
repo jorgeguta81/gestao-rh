@@ -58,6 +58,7 @@ public class TestesRh {
         impostos();
         ferias();
         acesso();
+        excepcoes();
         System.out.println("\n" + (feitos - falhados) + "/" + feitos + " verificações OK");
         System.exit(falhados == 0 ? 0 : 1);
     }
@@ -97,11 +98,11 @@ public class TestesRh {
                 LocalDate.of(1995, 5, 5), "t@x.mz", "841234567", "Sénior", 2, LocalDate.now(), 25000, 1000, 0));
         ok(app.funcionarios.buscar(id).get().getNome().equals("Nome Editado"), "editar grava o nome");
         ok(app.funcionarios.buscar(id).get().getDepartamentoId() == 2, "editar grava o departamento");
-        lanca(IllegalArgumentException.class, "inactivo", () -> { app.funcionarios.demitir(id); app.funcionarios.demitir(id); }, "demitir duas vezes");
+        lanca(RegraNegocioException.class, "inactivo", () -> { app.funcionarios.demitir(id); app.funcionarios.demitir(id); }, "demitir duas vezes");
         app.funcionarios.reativar(id);
 
         app.ferias.solicitar(id, LocalDate.now().plusDays(30), LocalDate.now().plusDays(40), LocalDate.now().plusDays(30).getYear());
-        lanca(IllegalArgumentException.class, "férias", () -> app.funcionarios.remover(id), "não remove quem tem férias");
+        lanca(RegraNegocioException.class, "férias", () -> app.funcionarios.remover(id), "não remove quem tem férias");
         int pedido = app.ferias.listar().get(0).getId();
         app.ferias.decidir(pedido, true);
         app.ferias.cancelar(pedido);
@@ -109,9 +110,9 @@ public class TestesRh {
         app.funcionarios.remover(id);
         ok(app.funcionarios.buscar(id).isEmpty(), "remover funcionário sem férias");
 
-        lanca(IllegalArgumentException.class, "funcionário(s)", () -> app.departamentos.remover(1), "não remove departamento com pessoas");
+        lanca(RegraNegocioException.class, "funcionário(s)", () -> app.departamentos.remover(1), "não remove departamento com pessoas");
         int dep = app.departamentos.criar("Logística", "x").getId();
-        lanca(IllegalArgumentException.class, "Já existe", () -> app.departamentos.criar("logística", ""), "departamento duplicado (ignora maiúsculas)");
+        lanca(RegraNegocioException.class, "Já existe", () -> app.departamentos.criar("logística", ""), "departamento duplicado (ignora maiúsculas)");
         app.departamentos.remover(dep);
         ok(app.departamentos.nome(dep).equals("?"), "remover departamento vazio");
     }
@@ -199,12 +200,12 @@ public class TestesRh {
 
         app.ferias.solicitar(carlos, LocalDate.of(2026, 11, 2), LocalDate.of(2026, 11, 15), 2026);
         ok(app.ferias.saldo(carlos, 2026).usados() == 14, "pedido de 14 dias descontado do saldo");
-        lanca(IllegalArgumentException.class, "sobrepõe", () -> app.ferias.solicitar(carlos, LocalDate.of(2026, 11, 10), LocalDate.of(2026, 11, 20), 2026), "períodos sobrepostos");
-        lanca(IllegalArgumentException.class, "Excede", () -> app.ferias.solicitar(carlos, LocalDate.of(2026, 12, 1), LocalDate.of(2026, 12, 25), 2026), "excede o saldo (14 + 24 > 30)");
-        lanca(IllegalArgumentException.class, "pelo menos 6", () -> app.ferias.solicitar(carlos, LocalDate.of(2026, 3, 2), LocalDate.of(2026, 3, 6), 2026), "fracção inferior a 6 dias (art. 109.º)");
+        lanca(RegraNegocioException.class, "sobrepõe", () -> app.ferias.solicitar(carlos, LocalDate.of(2026, 11, 10), LocalDate.of(2026, 11, 20), 2026), "períodos sobrepostos");
+        lanca(RegraNegocioException.class, "Excede", () -> app.ferias.solicitar(carlos, LocalDate.of(2026, 12, 1), LocalDate.of(2026, 12, 25), 2026), "excede o saldo (14 + 24 > 30)");
+        lanca(RegraNegocioException.class, "pelo menos 6", () -> app.ferias.solicitar(carlos, LocalDate.of(2026, 3, 2), LocalDate.of(2026, 3, 6), 2026), "fracção inferior a 6 dias (art. 109.º)");
         app.ferias.solicitar(carlos, LocalDate.of(2026, 12, 1), LocalDate.of(2026, 12, 16), 2026);
         ok(app.ferias.saldo(carlos, 2026).disponivel() == 0, "gozar exactamente o saldo (30) é permitido");
-        lanca(IllegalArgumentException.class, "Excede", () -> app.ferias.solicitar(carlos, LocalDate.of(2027, 1, 5), LocalDate.of(2027, 1, 20), 2026), "saldo de 2026 esgotado mesmo gozando em 2027");
+        lanca(RegraNegocioException.class, "Excede", () -> app.ferias.solicitar(carlos, LocalDate.of(2027, 1, 5), LocalDate.of(2027, 1, 20), 2026), "saldo de 2026 esgotado mesmo gozando em 2027");
         app.ferias.solicitar(carlos, LocalDate.of(2027, 1, 5), LocalDate.of(2027, 1, 20), 2027);
         ok(true, "direito de 2027 é independente do de 2026");
         lanca(ValidacaoException.class, "ano de referência", () -> app.ferias.solicitar(carlos, LocalDate.of(2027, 8, 1), LocalDate.of(2027, 8, 10), 2020), "ano de referência fora do permitido");
@@ -217,7 +218,7 @@ public class TestesRh {
         // último saldo inferior a 6 dias: só pode ser pedido de uma vez
         app.ferias.solicitar(carlos, LocalDate.of(2026, 11, 2), LocalDate.of(2026, 11, 10), 2026);   // 9 dias -> restam 5
         ok(app.ferias.saldo(carlos, 2026).disponivel() == 5, "restam 5 dias");
-        lanca(IllegalArgumentException.class, "pelo menos 6", () -> app.ferias.solicitar(carlos, LocalDate.of(2026, 11, 16), LocalDate.of(2026, 11, 19), 2026), "4 dias de um saldo de 5 recusados");
+        lanca(RegraNegocioException.class, "pelo menos 6", () -> app.ferias.solicitar(carlos, LocalDate.of(2026, 11, 16), LocalDate.of(2026, 11, 19), 2026), "4 dias de um saldo de 5 recusados");
         app.ferias.solicitar(carlos, LocalDate.of(2026, 11, 16), LocalDate.of(2026, 11, 20), 2026);
         ok(app.ferias.saldo(carlos, 2026).disponivel() == 0, "os 5 dias finais são aceites de uma vez");
     }
@@ -230,7 +231,7 @@ public class TestesRh {
         lanca(AutenticacaoException.class, "incorrectos", () -> app.utilizadores.login("admin", "errada"), "password errada");
         lanca(AutenticacaoException.class, "incorrectos", () -> app.utilizadores.login("naoexiste", "x"), "utilizador inexistente dá a mesma mensagem");
         ok(app.utilizadores.login("admin", "Admin@123").isMudarPassword(), "primeiro acesso obriga a mudar a password");
-        lanca(IllegalArgumentException.class, "8 caracteres", () -> app.utilizadores.alterarPassword("Admin@123", "fraca"), "password fraca recusada");
+        lanca(ValidacaoException.class, "8 caracteres", () -> app.utilizadores.alterarPassword("Admin@123", "fraca"), "password fraca recusada");
         app.utilizadores.alterarPassword("Admin@123", "NovaSenha1");
         ok(app.funcionarios.listar().size() == 4 && app.utilizadores.listar().size() == 3, "administrador vê tudo");
         lanca(AcessoNegadoException.class, "própria conta", () -> app.utilizadores.atualizar(1, Perfil.FUNCIONARIO, 0, true), "admin não se despromove");
@@ -270,5 +271,36 @@ public class TestesRh {
 
         Aplicacao app2 = new Aplicacao(Path.of(System.getProperty("java.io.tmpdir")).resolve("inexistente-" + System.nanoTime()));
         ok(app2.utilizadores.login("admin", "Admin@123") != null, "(nova instalação) conta admin criada");
+    }
+
+    // ------------------------------------------------------------------ excepções
+    static void excepcoes() throws Exception {
+        seccao("Tratamento de excepções");
+        Aplicacao app = nova();
+        lanca(RecursoNaoEncontradoException.class, "não encontrado", () -> app.funcionarios.demitir(999), "demitir ID inexistente");
+        lanca(RecursoNaoEncontradoException.class, "não encontrado", () -> app.departamentos.remover(999), "remover departamento inexistente");
+        lanca(RecursoNaoEncontradoException.class, "não encontrado", () -> app.ferias.cancelar(999), "cancelar pedido inexistente");
+        lanca(RecursoNaoEncontradoException.class, "não encontrado", () -> app.utilizadores.redefinirPassword(999), "redefinir utilizador inexistente");
+        ok(new ValidacaoException("x") instanceof RhException && new AcessoNegadoException("x") instanceof RhException
+                && new PersistenciaException("x") instanceof RhException, "todas as excepções da aplicação derivam de RhException");
+
+        // falha de gravação: o repositório desfaz a alteração em memória
+        Path impossivel = Path.of("/proc/rh-inexistente/dados.dat");
+        rh.repositorio.RepositorioFicheiro<Departamento> repo = new rh.repositorio.RepositorioFicheiro<>(impossivel);
+        lanca(PersistenciaException.class, "gravar", () -> repo.criar(new Departamento("A", "b")), "falha ao gravar é comunicada");
+        ok(repo.listarTodos().isEmpty(), "falha ao gravar: a criação é desfeita em memória (rollback)");
+
+        // registos em ficheiro
+        Path pasta = Files.createTempDirectory("rh-log");
+        Aplicacao a = new Aplicacao(pasta);
+        a.utilizadores.login("admin", "Admin@123");
+        a.funcionarios.admitir(efectivo("110100000050A", "400000050", 20000));
+        try { a.utilizadores.login("admin", "PalavraSecreta999"); } catch (AutenticacaoException e) { /* esperado */ }
+        for (var h : java.util.logging.Logger.getLogger("rh.auditoria").getHandlers()) h.flush();
+        String auditoria = Files.readString(pasta.resolve("auditoria.0.log"));
+        ok(auditoria.contains("FUNCIONARIO_ADMITIDO") && auditoria.contains("LOGIN_OK") && auditoria.contains("LOGIN_FALHADO"),
+                "auditoria regista admissão, login e login falhado");
+        ok(!auditoria.contains("PalavraSecreta999") && !auditoria.contains("Admin@123") && !auditoria.contains("110100000050A"),
+                "auditoria não contém palavras-passe nem BI");
     }
 }

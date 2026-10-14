@@ -5,6 +5,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
+import rh.excecao.ValidacaoException;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
@@ -42,11 +43,11 @@ public final class Senha {
     /** Política mínima: 8+ caracteres, com letras e números. */
     public static void validarForca(String password) {
         if (password == null || password.length() < TAMANHO_MINIMO)
-            throw new IllegalArgumentException("A palavra-passe deve ter pelo menos " + TAMANHO_MINIMO + " caracteres.");
+            throw new ValidacaoException("A palavra-passe deve ter pelo menos " + TAMANHO_MINIMO + " caracteres.");
         boolean letra = password.chars().anyMatch(Character::isLetter);
         boolean digito = password.chars().anyMatch(Character::isDigit);
         if (!letra || !digito)
-            throw new IllegalArgumentException("A palavra-passe deve conter letras e números.");
+            throw new ValidacaoException("A palavra-passe deve conter letras e números.");
     }
 
     /** Palavra-passe temporária legível (sem caracteres ambíguos). */

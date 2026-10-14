@@ -33,10 +33,10 @@ final class MudarPasswordDialogo {
             try {
                 String n = new String(nova.getPassword());
                 if (!n.equals(new String(conf.getPassword())))
-                    throw new IllegalArgumentException("A confirmação não coincide com a nova palavra-passe.");
+                    throw new rh.excecao.ValidacaoException("A confirmação não coincide com a nova palavra-passe.");
                 app.utilizadores.alterarPassword(new String(actual.getPassword()), n);
                 return true;
-            } catch (RhException | IllegalArgumentException ex) {
+            } catch (RhException ex) {
                 erro = ex.getMessage();
             }
         }

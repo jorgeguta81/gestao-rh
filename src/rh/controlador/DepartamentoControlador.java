@@ -19,15 +19,23 @@ public class DepartamentoControlador {
 
     public Departamento criar(String nome, String descricao) {
         sessao.exigir(Permissao.DEPARTAMENTOS_EDITAR);
-        return servico.criar(new Departamento(nome, descricao));
+        Departamento d = servico.criar(new Departamento(nome, descricao));
+        sessao.auditar("DEPARTAMENTO_CRIADO id=" + d.getId());
+        return d;
     }
 
     public Departamento atualizar(int id, String nome, String descricao) {
         sessao.exigir(Permissao.DEPARTAMENTOS_EDITAR);
-        return servico.atualizar(id, nome, descricao);
+        Departamento d = servico.atualizar(id, nome, descricao);
+        sessao.auditar("DEPARTAMENTO_ACTUALIZADO id=" + id);
+        return d;
     }
 
-    public void remover(int id) { sessao.exigir(Permissao.DEPARTAMENTOS_EDITAR); servico.remover(id); }
+    public void remover(int id) {
+        sessao.exigir(Permissao.DEPARTAMENTOS_EDITAR);
+        servico.remover(id);
+        sessao.auditar("DEPARTAMENTO_REMOVIDO id=" + id);
+    }
 
     /** Só para mostrar o nome (não expõe dados sensíveis), por isso sem verificação de permissão. */
     public String nome(int id) { return servico.buscar(id).map(Departamento::getNome).orElse("?"); }

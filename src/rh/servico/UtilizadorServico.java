@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import rh.excecao.AutenticacaoException;
+import rh.excecao.RecursoNaoEncontradoException;
+import rh.excecao.RegraNegocioException;
+import rh.excecao.ValidacaoException;
 import rh.modelo.*;
 import rh.repositorio.Repositorio;
 import rh.util.Senha;
@@ -48,7 +51,7 @@ public class UtilizadorServico {
 
     public Utilizador criar(String nome, String password, Perfil perfil, int funcionarioId, boolean mudarPassword) {
         validarNome(nome);
-        if (procurar(nome).isPresent()) throw new IllegalArgumentException("Já existe um utilizador com este nome.");
+        if (procurar(nome).isPresent()) throw new RegraNegocioException("Já existe um utilizador com este nome.");
         Senha.validarForca(password);
         validarAssociacao(perfil, funcionarioId, -1);
         String sal = Senha.novoSal();
@@ -63,7 +66,7 @@ public class UtilizadorServico {
         boolean eraAdminActivo = u.getPerfil() == Perfil.ADMINISTRADOR && u.isAtivo();
         boolean continuaAdminActivo = perfil == Perfil.ADMINISTRADOR && ativo;
         if (eraAdminActivo && !continuaAdminActivo && outrosAdminsActivos(id) == 0)
-            throw new IllegalArgumentException("Tem de existir pelo menos um administrador activo.");
+            throw new RegraNegocioException("Tem de existir pelo menos um administrador activo.");
         u.setPerfil(perfil);
         u.setFuncionarioId(funcionarioId);
         u.setAtivo(ativo);
@@ -87,10 +90,10 @@ public class UtilizadorServico {
     public void alterarPassword(int id, String atual, String nova) {
         Utilizador u = obter(id);
         if (!Senha.confere(atual == null ? "" : atual, u.getSal(), u.getHash()))
-            throw new IllegalArgumentException("A palavra-passe actual está incorrecta.");
+            throw new AutenticacaoException("A palavra-passe actual está incorrecta.");
         Senha.validarForca(nova);
         if (Senha.confere(nova, u.getSal(), u.getHash()))
-            throw new IllegalArgumentException("A nova palavra-passe tem de ser diferente da actual.");
+            throw new RegraNegocioException("A nova palavra-passe tem de ser diferente da actual.");
         String sal = Senha.novoSal();
         u.definirPassword(sal, Senha.hash(nova, sal));
         u.setMudarPassword(false);
@@ -107,7 +110,7 @@ public class UtilizadorServico {
     }
 
     private Utilizador obter(int id) {
-        return repo.buscarPorId(id).orElseThrow(() -> new IllegalArgumentException("Utilizador não encontrado."));
+        return repo.buscarPorId(id).orElseThrow(() -> new RecursoNaoEncontradoException("Utilizador não encontrado."));
     }
 
     private long outrosAdminsActivos(int idIgnorado) {
@@ -121,20 +124,20 @@ public class UtilizadorServico {
 
     private static void validarNome(String nome) {
         if (nome == null || !nome.trim().matches("[A-Za-z0-9._-]{2,30}"))
-            throw new IllegalArgumentException("Nome de utilizador: 2 a 30 caracteres (letras, números, ponto, hífen ou _).");
+            throw new ValidacaoException("Nome de utilizador: 2 a 30 caracteres (letras, números, ponto, hífen ou _).");
     }
 
     /** Um perfil Funcionário tem de estar ligado a um funcionário; um funcionário só tem uma conta. */
     private void validarAssociacao(Perfil perfil, int funcionarioId, int idIgnorado) {
-        if (perfil == null) throw new IllegalArgumentException("Escolha um perfil.");
+        if (perfil == null) throw new ValidacaoException("Escolha um perfil.");
         if (funcionarioId != Utilizador.SEM_FUNCIONARIO) {
             if (funcionarios.buscarPorId(funcionarioId).isEmpty())
-                throw new IllegalArgumentException("O funcionário associado não existe.");
+                throw new ValidacaoException("O funcionário associado não existe.");
             boolean jaTemConta = repo.listarTodos().stream()
                     .anyMatch(u -> u.getId() != idIgnorado && u.getFuncionarioId() == funcionarioId);
-            if (jaTemConta) throw new IllegalArgumentException("Este funcionário já tem uma conta de acesso.");
+            if (jaTemConta) throw new RegraNegocioException("Este funcionário já tem uma conta de acesso.");
         } else if (perfil == Perfil.FUNCIONARIO) {
-            throw new IllegalArgumentException("O perfil Funcionário tem de estar associado a um funcionário.");
+            throw new ValidacaoException("O perfil Funcionário tem de estar associado a um funcionário.");
         }
     }
 }

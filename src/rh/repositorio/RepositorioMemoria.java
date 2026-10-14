@@ -12,7 +12,13 @@ public class RepositorioMemoria<T extends Identificavel> implements Repositorio<
     public synchronized T criar(T entidade) {
         entidade.setId(proximoId++);
         dados.put(entidade.getId(), entidade);
-        aoAlterar();
+        try {
+            aoAlterar();
+        } catch (RuntimeException e) { // não gravou: desfaz, para a memória não ficar diferente do disco
+            dados.remove(entidade.getId());
+            proximoId--;
+            throw e;
+        }
         return entidade;
     }
 
@@ -32,9 +38,15 @@ public class RepositorioMemoria<T extends Identificavel> implements Repositorio<
 
     @Override
     public synchronized boolean remover(int id) {
-        boolean removido = dados.remove(id) != null;
-        if (removido) aoAlterar();
-        return removido;
+        T anterior = dados.remove(id);
+        if (anterior == null) return false;
+        try {
+            aoAlterar();
+        } catch (RuntimeException e) {
+            dados.put(id, anterior);
+            throw e;
+        }
+        return true;
     }
 
     /** Gancho chamado depois de cada alteração (a versão em ficheiro grava aqui). */

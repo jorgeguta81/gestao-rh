@@ -5,7 +5,6 @@ import java.awt.GridBagLayout;
 import javax.swing.*;
 import rh.Aplicacao;
 import rh.config.SectorActividade;
-import rh.excecao.RhException;
 
 /** Definições da empresa: nome e sector de actividade (define o salário mínimo aplicado nas validações). */
 final class DefinicoesDialogo {
@@ -28,11 +27,9 @@ final class DefinicoesDialogo {
 
         if (JOptionPane.showConfirmDialog(pai, p, "Definições da empresa", JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
-        try {
+        Ui.tentar(pai, () -> {
             app.definicoes.guardar(nome.getText(), (SectorActividade) sector.getSelectedItem());
             Ui.info(pai, "Definições guardadas.");
-        } catch (RhException | IllegalArgumentException ex) {
-            Ui.erro(pai, ex.getMessage());
-        }
+        });
     }
 }

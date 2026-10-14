@@ -4,7 +4,6 @@ import java.awt.*;
 import java.time.format.DateTimeFormatter;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import rh.excecao.RhException;
 import rh.modelo.*;
 
 /** TELA - Utilizadores (só Administrador): criar contas, mudar perfil, activar/desactivar, redefinir palavra-passe. */
@@ -60,7 +59,7 @@ public class UtilizadoresFrame extends TelaBase {
     private int funcionarioEscolhido() { return ((Item) cbFunc.getSelectedItem()).id(); }
 
     private void gravar() {
-        try {
+        Ui.tentar(this, () -> {
             Perfil perfil = (Perfil) cbPerfil.getSelectedItem();
             if (editandoId < 0) {
                 app.utilizadores.criar(tfNome.getText(), new String(pfPassword.getPassword()), perfil, funcionarioEscolhido());
@@ -70,20 +69,16 @@ public class UtilizadoresFrame extends TelaBase {
             }
             novo();
             atualizar();
-        } catch (RhException | IllegalArgumentException ex) {
-            Ui.erro(this, ex.getMessage());
-        }
+        });
     }
 
     private void redefinir() {
-        try {
+        Ui.tentar(this, () -> {
             if (!Ui.confirmar(this, "Redefinir a palavra-passe deste utilizador?")) return;
             String temp = app.utilizadores.redefinirPassword(editandoId);
             Ui.info(this, "Palavra-passe temporária: " + temp + "\nComunique-a ao utilizador; ele terá de a mudar no próximo acesso.");
             atualizar();
-        } catch (RhException | IllegalArgumentException ex) {
-            Ui.erro(this, ex.getMessage());
-        }
+        });
     }
 
     private void novo() {

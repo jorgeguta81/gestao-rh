@@ -5,6 +5,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import rh.config.ParametrosLegais;
+import rh.excecao.RecursoNaoEncontradoException;
+import rh.excecao.RegraNegocioException;
 import rh.excecao.ValidacaoException;
 import rh.modelo.*;
 import rh.repositorio.Repositorio;
@@ -49,7 +51,7 @@ public class FeriasServico {
 
     public Ferias solicitar(int funcionarioId, LocalDate inicio, LocalDate fim, int anoReferencia) {
         Funcionario f = obterFuncionario(funcionarioId);
-        if (!f.isAtivo()) throw new IllegalArgumentException("Funcionário inactivo.");
+        if (!f.isAtivo()) throw new RegraNegocioException("Funcionário inactivo.");
         if (inicio == null || fim == null) throw new ValidacaoException("Indique as datas de início e fim.");
         if (fim.isBefore(inicio)) throw new ValidacaoException("A data final é anterior à inicial.");
         if (anoReferencia != inicio.getYear() && anoReferencia != inicio.getYear() - 1)
@@ -58,18 +60,18 @@ public class FeriasServico {
         boolean sobrepoe = repo.listarTodos().stream()
                 .filter(x -> x.getFuncionarioId() == funcionarioId && x.getEstado() != EstadoFerias.REJEITADA)
                 .anyMatch(x -> !fim.isBefore(x.getInicio()) && !inicio.isAfter(x.getFim()));
-        if (sobrepoe) throw new IllegalArgumentException("Já existe um pedido de férias que se sobrepõe a este período.");
+        if (sobrepoe) throw new RegraNegocioException("Já existe um pedido de férias que se sobrepõe a este período.");
 
         int dias = diasDeGozo(inicio, fim);
         if (dias <= 0) throw new ValidacaoException("O período só tem feriados: não conta como férias.");
 
         Saldo s = saldo(funcionarioId, anoReferencia);
         if (dias > s.disponivel())
-            throw new IllegalArgumentException(String.format(
+            throw new RegraNegocioException(String.format(
                     "Excede o direito a férias de %d: tem %d dias, já usou/pediu %d e este pedido tem %d (os feriados não contam).",
                     anoReferencia, s.direito(), s.usados(), dias));
         if (dias < ParametrosLegais.MIN_DIAS_FRACAO_FERIAS && dias != s.disponivel())
-            throw new IllegalArgumentException("Cada período de férias deve ter pelo menos "
+            throw new RegraNegocioException("Cada período de férias deve ter pelo menos "
                     + ParametrosLegais.MIN_DIAS_FRACAO_FERIAS + " dias (art. 109.º), excepto o último, que pode ser o saldo restante ("
                     + s.disponivel() + ").");
         return repo.criar(new Ferias(funcionarioId, inicio, fim, anoReferencia, dias));
@@ -77,9 +79,9 @@ public class FeriasServico {
 
     public void decidir(int feriasId, boolean aprovar) {
         Ferias fe = repo.buscarPorId(feriasId)
-                .orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Pedido não encontrado."));
         if (fe.getEstado() != EstadoFerias.PENDENTE)
-            throw new IllegalArgumentException("Pedido já foi decidido.");
+            throw new RegraNegocioException("Pedido já foi decidido.");
         fe.setEstado(aprovar ? EstadoFerias.APROVADA : EstadoFerias.REJEITADA);
         repo.atualizar(fe); // grava a alteração
     }
@@ -98,15 +100,15 @@ public class FeriasServico {
 
     /** Só se cancelam pedidos pendentes, ou aprovados que ainda não começaram. */
     public void cancelar(int id) {
-        Ferias fe = repo.buscarPorId(id).orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado."));
+        Ferias fe = repo.buscarPorId(id).orElseThrow(() -> new RecursoNaoEncontradoException("Pedido não encontrado."));
         boolean pendente = fe.getEstado() == EstadoFerias.PENDENTE;
         boolean aprovadaFutura = fe.getEstado() == EstadoFerias.APROVADA && fe.getInicio().isAfter(LocalDate.now());
         if (!pendente && !aprovadaFutura)
-            throw new IllegalArgumentException("Só se podem cancelar pedidos pendentes ou aprovados que ainda não começaram.");
+            throw new RegraNegocioException("Só se podem cancelar pedidos pendentes ou aprovados que ainda não começaram.");
         repo.remover(id);
     }
 
     private Funcionario obterFuncionario(int id) {
-        return funcionarios.buscarPorId(id).orElseThrow(() -> new IllegalArgumentException("Funcionário não encontrado."));
+        return funcionarios.buscarPorId(id).orElseThrow(() -> new RecursoNaoEncontradoException("Funcionário não encontrado."));
     }
 }
