@@ -26,6 +26,7 @@
 | Férias de um ano podem gozar-se nesse ano ou no seguinte | art. 107.º | Campo "ano de referência" |
 | Feriados nacionais (9 fixos); se caírem ao domingo, o descanso passa para segunda | art. 105.º | `ParametrosLegais.FERIADOS` |
 | Salário nunca inferior ao mínimo do sector | art. 117.º ⚠️ | Validação do salário base |
+| Recibo de vencimento com identificação, período, remunerações e descontos | art. 123.º | `RelatorioServico.recibo` |
 
 ### Segurança social e impostos
 - **INSS:** 3% descontado ao trabalhador; 4% a cargo da empresa (aparece como "custo para a empresa").

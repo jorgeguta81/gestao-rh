@@ -8,3 +8,4 @@ dados/
 # SO
 .DS_Store
 Thumbs.db
+*.lck
