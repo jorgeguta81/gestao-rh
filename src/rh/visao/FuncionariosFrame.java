@@ -22,7 +22,7 @@ public class FuncionariosFrame extends TelaBase {
     private final JLabel lbV1 = new JLabel(), lbV2 = new JLabel(), lbV3 = new JLabel();
     private final JComboBox<Departamento> cbDep = new JComboBox<>();
     private final DefaultTableModel modelo = Ui.modeloTabela(
-            "ID", "Tipo", "Nome", "BI", "Cargo", "Departamento", "Admissão", "Estado", "Salário bruto (MT)");
+            "ID", "Tipo", "Nome", "BI", "Cargo", "Departamento", "Admissão", "Estado", "Salário (MT)");
     private final JTable tabela = Ui.configurar(new JTable(modelo));
     // pesquisa, filtros e ordenação
     private final JTextField tfBusca = new JTextField(16);
@@ -82,7 +82,7 @@ public class FuncionariosFrame extends TelaBase {
         esquerda.add(botoes, BorderLayout.CENTER);
 
         tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        Ui.larguras(tabela, 40, 80, 150, 120, 110, 120, 85, 70, 110);
+        Ui.larguras(tabela, 40, 95, 150, 135, 125, 125, 100, 70, 110);
         tabela.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && !aCarregar) aoSeleccionar();
         });
@@ -91,6 +91,7 @@ public class FuncionariosFrame extends TelaBase {
         cbFiltroTipo.addItem("Todos os tipos");
         for (TipoFuncionario t : TipoFuncionario.values()) cbFiltroTipo.addItem(t);
         cbFiltroDep.setRenderer(Ui.rendererDepartamento());
+        cbOrdem.setPrototypeDisplayValue(CriterioFuncionario.Campo.ADMISSAO);
         JButton bLimpar = new JButton("Limpar filtros");
         bLimpar.addActionListener(e -> limparFiltros());
         Runnable refiltrar = () -> { if (!aCarregar) atualizar(); };
@@ -115,7 +116,7 @@ public class FuncionariosFrame extends TelaBase {
         ajustarCampos();
         atualizar();
         novo();
-        dimensionar(1280, 640);
+        dimensionar(1340, 640);
     }
 
     /** Mostra só os campos de valores que fazem sentido para o tipo escolhido. */

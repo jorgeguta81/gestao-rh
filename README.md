@@ -72,7 +72,7 @@ As permissões são verificadas nos **controladores**, não só escondidas na in
 src/rh/
 ├── Main.java, Aplicacao.java   arranque e ligação de todas as peças
 ├── modelo/        (M) entidades: Funcionario e subtipos, Departamento, Ferias, Utilizador, Perfil, Permissao
-├── visao/         (V) telas Swing: Login, Menu, Funcionarios, Departamentos, Ferias, Folha, Dashboard...
+├── visao/         (V) telas Swing + Tema (aspecto visual): Login, Menu, Funcionarios, Departamentos, Ferias, Folha, Dashboard...
 ├── controlador/   (C) uma classe por área + Sessao; verifica permissões e regista a auditoria
 ├── servico/       regras de negócio (férias, folha, validação, pesquisa, relatórios)
 ├── repositorio/   persistência (memória e ficheiro)
@@ -116,3 +116,4 @@ Resumo do que foi investigado, onde está no código e **o que ainda deve ser co
 | 8 | `feat: pesquisa, filtros e ordenacao` | Critérios nos serviços, tabelas ordenáveis |
 | 9 | `feat: relatorios e dashboard` | Dashboard, recibo, CSV |
 | 10 | `docs: README e documentacao final` | Este ficheiro, arquitectura e manual |
+| 11 | `style: tema visual moderno` | Cores, botões, tabelas, cabeçalho, menu em cartões e login redesenhado |

@@ -5,7 +5,7 @@ import javax.swing.*;
 import rh.modelo.Permissao;
 import rh.modelo.Utilizador;
 
-/** TELA 1 - Menu principal. Só mostra o que o perfil do utilizador pode usar. */
+/** TELA 1 - Menu principal: cartões com o que o perfil do utilizador pode usar. */
 public class MenuPrincipal extends JFrame {
 
     public MenuPrincipal(Navegador nav) {
@@ -18,39 +18,53 @@ public class MenuPrincipal extends JFrame {
             @Override public void windowClosing(java.awt.event.WindowEvent e) { nav.sair(); }
         });
 
-        JLabel titulo = new JLabel("Gestão de Recursos Humanos", SwingConstants.CENTER);
-        titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 20f));
-        JLabel quem = new JLabel(u.getNomeUtilizador() + "  |  " + u.getPerfil(), SwingConstants.CENTER);
-        JPanel topo = new JPanel(new GridLayout(2, 1));
-        topo.setBorder(BorderFactory.createEmptyBorder(16, 10, 8, 10));
-        topo.add(titulo);
-        topo.add(quem);
+        JPanel raiz = new JPanel(new BorderLayout());
+        raiz.putClientProperty(Tema.IGNORAR, true);
+        raiz.setBackground(Tema.FUNDO);
+        String empresa = nav.app().definicoes.nomeEmpresa();
+        raiz.add(Tema.banner("Gestão de Recursos Humanos", empresa.isBlank() ? "Empresas privadas moçambicanas" : empresa,
+                u.getNomeUtilizador() + "  |  " + u.getPerfil()), BorderLayout.NORTH);
 
-        JPanel botoes = new JPanel(new GridLayout(0, 1, 0, 10));
-        botoes.setBorder(BorderFactory.createEmptyBorder(10, 40, 24, 40));
-        if (sessao.tem(Permissao.FUNCIONARIOS_VER)) botoes.add(botao("Funcionários", () -> nav.abrir(Navegador.Tela.FUNCIONARIOS)));
-        if (sessao.tem(Permissao.DEPARTAMENTOS_VER)) botoes.add(botao("Departamentos", () -> nav.abrir(Navegador.Tela.DEPARTAMENTOS)));
-        botoes.add(botao(sessao.tem(Permissao.FERIAS_VER_TODAS) ? "Férias" : "As minhas férias",
-                () -> nav.abrir(Navegador.Tela.FERIAS)));
-        botoes.add(botao(sessao.tem(Permissao.FOLHA_VER_TODOS) ? "Folha de salários" : "O meu recibo",
-                () -> nav.abrir(Navegador.Tela.FOLHA)));
-        if (sessao.tem(Permissao.RELATORIOS_VER)) botoes.add(botao("Dashboard e relatórios", () -> nav.abrir(Navegador.Tela.DASHBOARD)));
-        if (sessao.tem(Permissao.UTILIZADORES_GERIR)) botoes.add(botao("Utilizadores", () -> nav.abrir(Navegador.Tela.UTILIZADORES)));
-        if (sessao.tem(Permissao.DEFINICOES_EDITAR)) botoes.add(botao("Definições da empresa", () -> nav.definicoes(this)));
-        botoes.add(botao("Alterar palavra-passe", () -> nav.alterarPassword(this)));
-        botoes.add(botao("Terminar sessão", nav::terminarSessao));
-        botoes.add(botao("Sair", nav::sair));
+        JPanel cartoes = new JPanel(new GridLayout(0, 3, 16, 16));
+        cartoes.putClientProperty(Tema.IGNORAR, true);
+        cartoes.setOpaque(false);
+        cartoes.setBorder(BorderFactory.createEmptyBorder(24, 28, 12, 28));
+        if (sessao.tem(Permissao.FUNCIONARIOS_VER))
+            cartoes.add(Tema.cartaoMenu("Funcionários", "Admissões, fichas e estado", new Color(0x2F6DB5), () -> nav.abrir(Navegador.Tela.FUNCIONARIOS)));
+        if (sessao.tem(Permissao.DEPARTAMENTOS_VER))
+            cartoes.add(Tema.cartaoMenu("Departamentos", "Estrutura da empresa", new Color(0x6C5CE7), () -> nav.abrir(Navegador.Tela.DEPARTAMENTOS)));
+        cartoes.add(Tema.cartaoMenu(sessao.tem(Permissao.FERIAS_VER_TODAS) ? "Férias" : "As minhas férias",
+                "Pedidos, saldo e decisões", new Color(0x1E8E5A), () -> nav.abrir(Navegador.Tela.FERIAS)));
+        cartoes.add(Tema.cartaoMenu(sessao.tem(Permissao.FOLHA_VER_TODOS) ? "Folha de salários" : "O meu recibo",
+                "Salário, INSS e IRPS", new Color(0xE67E22), () -> nav.abrir(Navegador.Tela.FOLHA)));
+        if (sessao.tem(Permissao.RELATORIOS_VER))
+            cartoes.add(Tema.cartaoMenu("Dashboard", "Indicadores e relatórios", new Color(0xC0392B), () -> nav.abrir(Navegador.Tela.DASHBOARD)));
+        if (sessao.tem(Permissao.UTILIZADORES_GERIR))
+            cartoes.add(Tema.cartaoMenu("Utilizadores", "Contas e perfis de acesso", new Color(0x16A0AD), () -> nav.abrir(Navegador.Tela.UTILIZADORES)));
+        if (sessao.tem(Permissao.DEFINICOES_EDITAR))
+            cartoes.add(Tema.cartaoMenu("Definições", "Empresa e sector", new Color(0x7F8C8D), () -> nav.definicoes(this)));
 
-        add(topo, BorderLayout.NORTH);
-        add(botoes, BorderLayout.CENTER);
-        pack();
-        setSize(Math.max(getWidth(), 380), getHeight() + 20);
+        JPanel centro = new JPanel(new BorderLayout());
+        centro.putClientProperty(Tema.IGNORAR, true);
+        centro.setOpaque(false);
+        centro.add(cartoes, BorderLayout.NORTH);
+        raiz.add(centro, BorderLayout.CENTER);
+
+        JPanel rodape = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
+        rodape.setBorder(BorderFactory.createEmptyBorder(0, 20, 8, 20));
+        JButton bPass = new JButton("Alterar palavra-passe");
+        bPass.addActionListener(e -> nav.alterarPassword(this));
+        JButton bSessao = new JButton("Terminar sessão");
+        bSessao.addActionListener(e -> nav.terminarSessao());
+        JButton bSair = new JButton("Sair");
+        bSair.addActionListener(e -> nav.sair());
+        rodape.add(bPass);
+        rodape.add(bSessao);
+        rodape.add(bSair);
+        raiz.add(rodape, BorderLayout.SOUTH);
+
+        setContentPane(raiz);
+        setSize(920, 540);
         setLocationRelativeTo(null);
-    }
-
-    private static JButton botao(String texto, Runnable acao) {
-        JButton b = new JButton(texto);
-        b.addActionListener(e -> acao.run());
-        return b;
     }
 }

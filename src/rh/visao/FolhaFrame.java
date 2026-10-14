@@ -33,7 +33,7 @@ public class FolhaFrame extends TelaBase {
         rodape.add(acoes, BorderLayout.EAST);
 
         tabela = Ui.configurar(new JTable(modelo));
-        Ui.larguras(tabela, 40, 170, 90, 100, 100, 100, 110, 130);
+        Ui.larguras(tabela, 40, 170, 90, 100, 100, 100, 110, 160);
         cbTipo.addItem("Todos os tipos");
         for (rh.modelo.TipoFuncionario t : rh.modelo.TipoFuncionario.values()) cbTipo.addItem(t);
         Ui.aoEscrever(tfBusca, this::atualizar);

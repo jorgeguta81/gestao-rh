@@ -31,6 +31,13 @@ flowchart LR
 5. O controlador regista `FUNCIONARIO_ADMITIDO id=N` na auditoria. A tela recarrega a tabela.
 6. Qualquer excepção volta a `Ui.tentar`, que mostra o aviso certo (ou regista o erro técnico).
 
+## Aspecto visual
+`visao/Tema` concentra o "look" da aplicação: paleta de cores, tipo de letra, botões arredondados (primário/perigo/secundário),
+tabelas com linhas alternadas e cabeçalho azul, cabeçalho de cada tela (`Tema.banner`) e os cartões do menu.
+`Navegador` aplica o tema a cada janela ao criá-la (`Tema.estilizar`), por isso as telas não repetem estilos.
+Para mudar cores ou fontes de toda a aplicação, basta alterar as constantes em `Tema`. Um componente que deve ficar
+de fora leva `putClientProperty("tema.ignorar", true)`. As telas são escritas em código (não usam o desenhador `.form` do NetBeans).
+
 ## Modelo de dados
 `Pessoa` → `Funcionario` (abstracta, implementa `Pagavel`) → `FuncionarioEfetivo` → `Gestor`;
 `FuncionarioContratado`; `Estagiario`. Cada tipo calcula o seu bruto (polimorfismo); INSS, IRPS e líquido

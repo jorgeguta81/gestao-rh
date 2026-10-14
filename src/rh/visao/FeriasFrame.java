@@ -79,6 +79,7 @@ public class FeriasFrame extends TelaBase {
         for (EstadoFerias e : EstadoFerias.values()) cbFiltroEstado.addItem(e);
         cbFiltroAno.addItem("Todos os anos");
         for (int a = LocalDate.now().getYear() + 1; a >= LocalDate.now().getYear() - 3; a--) cbFiltroAno.addItem(a);
+        cbOrdem.setPrototypeDisplayValue(CriterioFerias.Campo.FUNCIONARIO);
         Runnable refiltrar = this::atualizar;
         Ui.aoEscrever(tfBusca, refiltrar);
         cbFiltroEstado.addActionListener(e -> refiltrar.run());

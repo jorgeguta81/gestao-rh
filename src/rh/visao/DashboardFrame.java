@@ -29,7 +29,6 @@ public class DashboardFrame extends TelaBase {
         titulo.setBorder(BorderFactory.createEmptyBorder(10, 12, 2, 12));
         detalhe.setBorder(BorderFactory.createEmptyBorder(0, 12, 8, 12));
         JPanel cabecalho = new JPanel(new BorderLayout());
-        cabecalho.add(titulo, BorderLayout.NORTH);
         cabecalho.add(detalhe, BorderLayout.CENTER);
 
         JPanel cartoes = new JPanel(new GridLayout(1, 5, 10, 0));
@@ -41,7 +40,11 @@ public class DashboardFrame extends TelaBase {
         cartoes.add(cartao("Férias por decidir", kpiFerias));
 
         JPanel graficos = new JPanel(new GridLayout(1, 3, 12, 0));
-        graficos.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
+        graficos.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Tema.BORDA),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        graficos.putClientProperty(Tema.IGNORAR, true);
+        graficos.setOpaque(true);
+        graficos.setBackground(Tema.CARTAO);
         graficos.add(grTipo);
         graficos.add(grDepHeadcount);
         graficos.add(grDepMassa);
@@ -93,9 +96,14 @@ public class DashboardFrame extends TelaBase {
 
     private static JPanel cartao(String texto, JLabel valor) {
         JPanel p = new JPanel(new BorderLayout());
-        p.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.GRAY),
-                BorderFactory.createEmptyBorder(8, 8, 8, 8)));
+        p.putClientProperty(Tema.IGNORAR, true);
+        p.setBackground(Tema.CARTAO);
+        p.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(4, 0, 0, 0, Tema.AZUL_MEDIO),
+                BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Tema.BORDA),
+                        BorderFactory.createEmptyBorder(8, 8, 8, 8))));
         JLabel t = new JLabel(texto, SwingConstants.CENTER);
+        t.setForeground(Tema.SUAVE);
+        valor.setForeground(Tema.AZUL);
         p.add(t, BorderLayout.NORTH);
         p.add(valor, BorderLayout.CENTER);
         return p;
@@ -125,7 +133,6 @@ public class DashboardFrame extends TelaBase {
     protected void atualizar() {
         Ui.tentar(this, () -> {
             Painel p = app.relatorios.painel();
-            titulo.setText("Dashboard" + (p.empresa().isBlank() ? "" : " - " + p.empresa()));
             detalhe.setText(String.format(Formato.PT_MZ,
                     "<html>%s  |  %d funcionários no total (%d inactivos)  |  salário bruto médio: %s MT  |  %d admissão(ões) nos últimos 12 meses<br>"
                             + "Férias: %d pessoa(s) de férias hoje  |  %d aprovada(s) a começar nos próximos 30 dias</html>",

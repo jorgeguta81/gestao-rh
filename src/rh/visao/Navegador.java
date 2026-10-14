@@ -20,7 +20,10 @@ public final class Navegador {
     private final Aplicacao app;
     private final Map<Tela, JFrame> abertas = new EnumMap<>(Tela.class);
 
-    public Navegador(Aplicacao app) { this.app = app; }
+    public Navegador(Aplicacao app) {
+        this.app = app;
+        Tema.aplicar(); // tem de ser antes de criar qualquer janela
+    }
 
     public Aplicacao app() { return app; }
 
@@ -31,6 +34,7 @@ public final class Navegador {
         JFrame f = abertas.get(tela);
         if (f == null || !f.isDisplayable()) {
             f = criar(tela);
+            Tema.estilizar(f.getContentPane());
             abertas.put(tela, f);
         }
         f.setVisible(true);
