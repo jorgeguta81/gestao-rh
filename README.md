@@ -47,7 +47,7 @@ Os dados ficam na pasta `dados/` (junto de onde se executa). Para usar outra pas
 | `rh` | `Rh@12345` | Gestor de RH (Ana Macuácua) |
 | `carlos` | `Func@1234` | Funcionário (Carlos Sitoe) |
 
-A palavra-passe tem de ser **mudada no primeiro acesso**.
+A palavra-passe tem de ser **mudada no primeiro acesso**. e so mudar no primeiro acesso usei nomes dos meus amigos para primeirosacessos
 
 ## Perfis e permissões
 
@@ -61,7 +61,7 @@ A palavra-passe tem de ser **mudada no primeiro acesso**.
 | Dashboard e relatórios | ✔ | ✔ | — |
 | Utilizadores e definições da empresa | ✔ | — | — |
 
-As permissões são verificadas nos **controladores**, não só escondidas na interface.
+As permissões são verificadas nos **controladores**, não só escondidas
 
 ## Estrutura do projecto (MVC)
 
