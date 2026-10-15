@@ -47,10 +47,7 @@ Os dados ficam na pasta `dados/` (junto de onde se executa). Para usar outra pas
 | `rh` | `Rh@12345` | Gestor de RH (Ana Macuácua) |
 | `carlos` | `Func@1234` | Funcionário (Carlos Sitoe) |
 
-A palavra-passe tem de ser **mudada no primeiro acesso**. Os funcionários e contas `rh`/`carlos` são dados de
-demonstração: numa instalação real apague `dados/` antes de começar, e só a conta `admin` será criada
-(depois crie as restantes no ecrã *Utilizadores*).
-Primeiro passo recomendado: *Definições da empresa* (nome e **sector de actividade**, que define o salário mínimo).
+A palavra-passe tem de ser **mudada no primeiro acesso**.
 
 ## Perfis e permissões
 
